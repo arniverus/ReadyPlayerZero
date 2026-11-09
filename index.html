@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ready Player Zero</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Ready Player Zero — an interactive 3D literary analysis game for Ernest Cline's Ready Player One.">
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+<!--
+  ======================================================================
+  READY PLAYER ZERO  —  single-file A-Frame game (no build step)
+  ----------------------------------------------------------------------
+  HOST: put this file in a GitHub repo as index.html and enable Pages.
+  CONTROLS: WASD move · mouse look (click the screen to lock the mouse)
+            Click or E = interact · H = hint · Esc = release the mouse
+  TEACHER TIP: add  ?debug  to the URL (index.html?debug) and the correct
+            evidence cards glow green, so you can test every question fast.
+  EDIT THE CONTENT: scroll to  "QUESTION BANK"  in the script. Every
+            question has: question text, 2–3 claims, 6 evidence strings,
+            and for each claim  ev:[i,j]  = the TWO correct evidence
+            indexes (0–5) for that claim.
+  ======================================================================
+-->
+
+<style>
+  :root{
+    --bg:#17110b; --panel:#261b12; --panel2:#30231a; --pink:#b9572b; --cyan:#8fb7a8;
+    --yellow:#e1b04a; --green:#9cbf72; --red:#d06a55; --text:#f3e8d2; --muted:#bfae90;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000;color:var(--text);font-family:"Segoe UI",Roboto,system-ui,sans-serif;overflow:hidden}
+  .hidden{display:none!important}
+  .disp{font-family:Georgia,"Times New Roman",serif;font-weight:700;letter-spacing:.04em}
+
+  /* ---------- overlays ---------- */
+  .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:#1a130c;padding:14px}
+  .panel{width:min(980px,100%);max-height:94vh;overflow:auto;background:linear-gradient(160deg,var(--panel),var(--panel2));
+    border:2px solid var(--pink);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.6);padding:22px 26px}
+  .panel::-webkit-scrollbar{width:10px}.panel::-webkit-scrollbar-thumb{background:#6b5238;border-radius:6px}
+  h1,h2,h3{margin:0}
+  h1{font-size:clamp(28px,5vw,52px);color:var(--yellow);text-shadow:3px 3px 0 var(--pink);text-align:center}
+  .sub{text-align:center;color:var(--cyan);margin:6px 0 16px;font-size:15px}
+  .btn{font:inherit;font-weight:700;cursor:pointer;color:#1c1208;background:linear-gradient(180deg,var(--yellow),#c98f2a);
+    border:0;border-radius:9px;padding:11px 22px;font-size:16px;box-shadow:0 4px 0 #7a5410;transition:transform .08s}
+  .btn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.08)}
+  .btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #7a5410}
+  .btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.6)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid #6b5238;box-shadow:none}
+  .row{display:flex;gap:12px;justify-content:flex-end;align-items:center;margin-top:16px;flex-wrap:wrap}
+
+  /* ---------- start screen ---------- */
+  #start .how{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:14px 0}
+  #start .how div{background:rgba(255,255,255,.05);border:1px solid #4d3b28;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.4}
+  #start .how b{color:var(--cyan)}
+  .guide{font-size:15px;line-height:1.5;color:var(--muted);text-align:center}
+  .namebox{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .namebox input{font:inherit;font-size:18px;padding:10px 14px;border-radius:9px;border:2px solid var(--cyan);background:#120c07;color:var(--text);width:min(300px,90%)}
+  kbd{background:#4a3826;border:1px solid #8a6c48;border-bottom-width:3px;border-radius:5px;padding:1px 7px;font-family:monospace;font-size:13px;color:#fff}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;z-index:20;pointer-events:none}
+  #topbar{position:absolute;top:10px;left:12px;right:12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+  .brand{font-size:15px;color:var(--yellow);background:rgba(23,17,11,.85);padding:7px 12px;border-radius:8px;border:1px solid #5a4630}
+  #chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;flex:1}
+  .pchip{font-size:12px;padding:5px 9px;border-radius:99px;background:rgba(23,17,11,.85);border:1px solid #5a4630;color:var(--muted)}
+  .pchip.done{background:rgba(156,191,114,.16);border-color:var(--green);color:var(--green)}
+  .pchip.now{border-color:var(--yellow);color:var(--yellow);box-shadow:none}
+  #keys{display:flex;gap:8px;background:rgba(23,17,11,.85);padding:6px 10px;border-radius:8px;border:1px solid #5a4630;font-size:13px}
+  .key{opacity:.28;filter:grayscale(1)}.key.have{opacity:1;filter:none;}
+  #crosshair{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;transition:transform .12s}
+  #crosshair:before,#crosshair:after{content:"";position:absolute;background:#fff;box-shadow:0 0 3px #000}
+  #crosshair:before{left:12px;top:0;width:2px;height:26px}#crosshair:after{top:12px;left:0;height:2px;width:26px}
+  #crosshair i{position:absolute;inset:8px;border-radius:50%;background:#000;box-shadow:none}
+  #crosshair.on{transform:scale(1.5) rotate(45deg)}
+  #crosshair.on:before,#crosshair.on:after{background:var(--yellow);box-shadow:0 0 3px #000}
+  #prompt{position:absolute;left:50%;top:calc(50% + 30px);transform:translateX(-50%);background:rgba(23,17,11,.92);border:1px solid var(--yellow);
+    color:var(--yellow);padding:5px 12px;border-radius:7px;font-size:14px;white-space:nowrap;opacity:0;transition:opacity .12s}
+  #prompt.on{opacity:1}
+  #riddle{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:min(860px,calc(100% - 24px));
+    background:linear-gradient(160deg,rgba(38,27,18,.95),rgba(48,35,26,.95));border:2px solid var(--cyan);border-radius:12px;padding:10px 16px 8px;
+    box-shadow:0 4px 18px rgba(0,0,0,.5)}
+  #rlevel{font-size:12px;color:var(--cyan);margin-bottom:3px}
+  #rtext{font-size:clamp(14px,1.55vw,18px);line-height:1.42;font-style:italic;white-space:pre-line}
+  #rfoot{font-size:11.5px;color:var(--muted);margin-top:5px}
+  #toast{position:absolute;left:50%;top:64px;transform:translateX(-50%) translateY(-10px);max-width:min(680px,92%);text-align:center;
+    background:rgba(23,17,11,.95);border:1px solid var(--pink);color:#fff;padding:9px 16px;border-radius:9px;font-size:15px;opacity:0;transition:all .25s}
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  #lockhint{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);background:rgba(23,17,11,.85);padding:8px 16px;border-radius:9px;
+    color:var(--muted);font-size:14px;border:1px dashed #6b5238}
+  #banner{position:fixed;inset:0;z-index:30;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0}
+  #banner.show{animation:bn 3.6s ease forwards}
+  #banner .b1{font-size:clamp(20px,3.6vw,42px);color:var(--yellow);text-align:center;padding:0 20px}
+  #banner .b2{margin-top:8px;color:var(--cyan);font-size:clamp(13px,1.6vw,18px)}
+  @keyframes bn{0%{opacity:0}12%{opacity:1}75%{opacity:1}100%{opacity:0}}
+  #fade{position:fixed;inset:0;background:#000;z-index:40;opacity:0;pointer-events:none;transition:opacity .65s}
+  #fade.on{opacity:1;pointer-events:all}
+
+  /* ---------- question modal ---------- */
+  #qmodal{z-index:60}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .chip{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid #6b5238;color:var(--muted);background:rgba(255,255,255,.04)}
+  .chip.lvl{border-color:var(--yellow);color:var(--yellow)}.chip.lens{border-color:var(--pink);color:var(--pink)}
+  #qbody h2{font-size:clamp(20px,2.6vw,28px);color:var(--yellow)}
+  .qtext{font-size:clamp(16px,1.9vw,20px);line-height:1.5;margin:8px 0 6px}
+  .lensnote{font-size:13.5px;color:var(--cyan);border-left:3px solid var(--cyan);padding:4px 10px;margin:6px 0 10px;background:rgba(143,183,168,.06)}
+  #qbody h3{font-size:16px;margin:16px 0 8px;color:#fff}
+  #qbody h3 .n{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;background:var(--pink);color:#1c1208;font-weight:800;margin-right:8px;font-size:14px}
+  #qbody h3 em{color:var(--yellow);font-style:normal;margin-left:6px}
+  .claims{display:grid;gap:9px}
+  .claim,.ev{font:inherit;color:var(--text);text-align:left;cursor:pointer;display:flex;gap:12px;align-items:flex-start;line-height:1.45;font-size:15px;
+    background:rgba(255,255,255,.05);border:2px solid #4d3b28;border-radius:10px;padding:11px 14px;transition:all .12s}
+  .claim:hover,.ev:hover{border-color:var(--cyan);background:rgba(143,183,168,.08)}
+  .claim b{flex:0 0 28px;height:28px;line-height:28px;text-align:center;border-radius:7px;background:#4a3826;color:var(--cyan)}
+  .claim.sel{border-color:var(--pink);background:rgba(185,87,43,.13)}.claim.sel b{background:var(--pink);color:#1c1208}
+  .evs{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:9px}
+  .ev .tick{flex:0 0 20px;height:20px;border-radius:5px;border:2px solid #8a6c48;margin-top:2px;position:relative}
+  .ev.sel{border-color:var(--yellow);background:rgba(225,176,74,.1)}
+  .ev.sel .tick{background:var(--yellow);border-color:var(--yellow)}
+  .ev.sel .tick:after{content:"✓";position:absolute;inset:-2px 0 0 0;text-align:center;font-size:14px;line-height:20px;color:#1c1208;font-weight:800}
+  .ev.dbg{outline:2px dashed var(--green);outline-offset:2px}
+  .qmsg{min-height:22px;margin-top:10px;font-size:15px;line-height:1.45}
+  .qmsg.bad{color:var(--red)}.qmsg.good{color:var(--green)}
+  .shake{animation:shake .4s}
+  @keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  .okbox{background:rgba(156,191,114,.09);border:1px solid var(--green);border-radius:10px;padding:10px 14px;font-size:14.5px;line-height:1.45;margin-top:6px}
+  .okbox q{display:block;margin-top:4px;color:#e6f2d6}
+  .frame{background:rgba(225,176,74,.08);border:1px dashed var(--yellow);border-radius:9px;padding:10px 14px;line-height:1.55;font-size:15px}
+  .frame i{color:var(--yellow);font-style:normal;font-weight:700}
+  textarea{width:100%;min-height:96px;resize:vertical;font:inherit;font-size:15px;line-height:1.45;padding:10px 12px;border-radius:9px;
+    border:2px solid #6b5238;background:#120c07;color:var(--text);margin-top:8px}
+  textarea:focus{outline:none;border-color:var(--cyan)}
+  .cnt{font-size:12px;color:var(--muted);text-align:right}
+
+  /* ---------- victory ---------- */
+  #victory .panel{border-color:var(--yellow);box-shadow:0 8px 40px rgba(0,0,0,.7)}
+  .egg{font-size:70px;text-align:center;filter:none;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-8px)}}
+  .takeaway{background:rgba(143,183,168,.07);border:1px solid var(--cyan);border-radius:10px;padding:14px 18px;font-size:16.5px;line-height:1.6;margin:14px 0}
+  table.lb{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0}
+  table.lb td,table.lb th{padding:6px 10px;border-bottom:1px solid #4d3b28;text-align:left}
+  table.lb th{color:var(--cyan);font-size:12px;letter-spacing:.1em}
+  table.lb td:last-child,table.lb th:last-child{text-align:right;font-family:monospace}
+  table.lb tr.me td{color:var(--yellow);font-weight:700;background:rgba(225,176,74,.1)}
+  table.lb tr.sixer td{color:#e08a78}
+  details.jr{background:rgba(255,255,255,.04);border:1px solid #4d3b28;border-radius:9px;padding:8px 12px;margin:6px 0;font-size:14px}
+  details.jr summary{cursor:pointer;color:var(--cyan);font-weight:700}
+  details.jr p{margin:6px 0;line-height:1.5}
+
+  @media (max-width:700px){.panel{padding:14px}.evs{grid-template-columns:1fr}}
+</style>
+</head>
+
+<body>
+
+<!-- ============================ START SCREEN ============================ -->
+<div id="start" class="overlay">
+  <div class="panel">
+    <h1 class="disp">READY PLAYER ZERO</h1>
+    <div class="sub">An interactive literary-analysis quest through <i>Ready Player One</i></div>
+    <p class="guide"><b style="color:#fff">Guiding Question:</b> How does the author strategically employ literary elements, narrative choices, and perspective to construct meaning — and how does examining the text through different literary lenses complicate or deepen that meaning?</p>
+    <div class="how">
+      <div><b>1 · Solve the riddle.</b> Each riddle hints at an object hidden in the world. Find it and click it.</div>
+      <div><b>2 · Choose a claim.</b> You'll see competing interpretations. Pick ONE you can defend.</div>
+      <div><b>3 · Prove it.</b> Select the 2 of 6 text-evidence cards that logically support <i>your</i> claim.</div>
+      <div><b>4 · Defend &amp; reconsider.</b> Explain the author's move, then answer a competing view.</div>
+    </div>
+    <p class="guide"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;·&nbsp; Mouse look (click screen to lock) &nbsp;·&nbsp; Click or <kbd>E</kbd> interact &nbsp;·&nbsp; <kbd>H</kbd> hint &nbsp;·&nbsp; <kbd>Esc</kbd> free the mouse</p>
+    <div class="namebox">
+      <input id="nameIn" maxlength="18" placeholder="Enter your gunter name…" autocomplete="off">
+      <button id="startBtn" class="btn disp" disabled>LOADING…</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ HUD ============================ -->
+<div id="hud" class="hidden">
+  <div id="topbar">
+    <div class="brand disp">READY PLAYER ZERO</div>
+    <div id="chips"></div>
+    <div id="keys"></div>
+  </div>
+  <div id="crosshair"><i></i></div>
+  <div id="prompt"></div>
+  <div id="toast"></div>
+  <div id="lockhint" class="hidden">Click the screen to look around · Esc frees the mouse</div>
+  <div id="riddle">
+    <div id="rlevel" class="disp"></div>
+    <div id="rtext"></div>
+    <div id="rfoot">[H] hint &nbsp;·&nbsp; Click / [E] interact &nbsp;·&nbsp; WASD move</div>
+  </div>
+</div>
+<div id="banner"><div class="b1 disp"></div><div class="b2"></div></div>
+<div id="fade"></div>
+
+<!-- ============================ QUESTION MODAL ============================ -->
+<div id="qmodal" class="overlay hidden"><div class="panel" id="qpanel"><div id="qbody"></div></div></div>
+
+<!-- ============================ VICTORY ============================ -->
+<div id="victory" class="overlay hidden">
+  <div class="panel">
+    <div class="egg">🥚</div>
+    <h1 class="disp">YOU FOUND THE EGG</h1>
+    <div class="sub" id="vsub"></div>
+    <div class="takeaway" id="vtake"></div>
+    <h3 class="disp" style="color:var(--cyan);font-size:15px">PARZIVAL &amp; FRIENDS — HIGH SCORES</h3>
+    <div id="vboard"></div>
+    <h3 class="disp" style="color:var(--cyan);font-size:15px;margin-top:16px">YOUR ANALYSIS JOURNAL</h3>
+    <div id="vjournal"></div>
+    <div class="row">
+      <button class="btn ghost" id="copyBtn">Copy my analysis</button>
+      <button class="btn" id="againBtn">Play again</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ 3D SCENE ============================ -->
+<a-scene id="scene" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
+         loading-screen="enabled: false" renderer="antialias: true" background="color: #000">
+  <a-assets>
+    <canvas id="lbCanvas" width="1024" height="576"></canvas>
+  </a-assets>
+
+  <a-entity id="world"></a-entity>
+
+  <a-entity id="cam" camera position="0 1.6 4"
+            look-controls="pointerLockEnabled: true; reverseMouseDrag: false"
+            wasd-controls="acceleration: 100"
+            bounded
+            raycaster="objects: .clickable; far: 7; interval: 60; showLine: false"></a-entity>
+</a-scene>
+
+<script>
+/* =====================================================================
+   READY PLAYER ZERO
+   ===================================================================== */
+
+/* ------------------ keep the player inside each environment ------------------ */
+window.RPZ_BOUNDS = [-6.4, 6.4, -6.4, 6.4];
+AFRAME.registerComponent('bounded', {
+  tick: function () {
+    var b = window.RPZ_BOUNDS, p = this.el.object3D.position;
+    p.x = Math.min(b[1], Math.max(b[0], p.x));
+    p.z = Math.min(b[3], Math.max(b[2], p.z));
+    p.y = 1.6;
+  }
+});
+
+(function () {
+'use strict';
+
+/* =====================================================================
+   1.  QUESTION BANK  (PLACEHOLDERS — replace with real content)
+   ---------------------------------------------------------------------
+   For every question:
+     label      – chip shown at the top (element or lens)
+     lensNote   – one-line reminder of what the element/lens means
+     question   – the literary question
+     claims     – 2 or 3 competing interpretations.  ev:[i,j] = indexes of the
+                  TWO evidence cards (0–5) that correctly support that claim.
+     evidence   – exactly 6 verbatim quotes / snippets (cite chapter!)
+   ===================================================================== */
+const PH = (code) => ['A','B','C','D','E','F'].map(l =>
+  `[PLACEHOLDER EVIDENCE ${code}-${l}] “Replace with a verbatim quote from the novel.” (Ch. __)`);
+
+const QUESTIONS = {
+  setting: {
+    label: 'Setting', kind: 'Literary Element · Key',
+    title: 'The Copper Key — Setting',
+    lensNote: 'Setting: when, where, and under what conditions the story happens — and how those conditions shape characters and meaning.',
+    question: '[PLACEHOLDER QUESTION] How does Cline use the setting of the Stacks to shape the novel\'s meaning?',
+    claims: [
+      { text: '[PLACEHOLDER CLAIM A] The setting traps characters in a cycle that makes escape into the OASIS feel necessary.', ev: [1, 4] },
+      { text: '[PLACEHOLDER CLAIM B] The setting critiques a society that has let inequality and neglect pile up.',            ev: [0, 5] },
+      { text: '[PLACEHOLDER CLAIM C] The setting shows that community and hope can survive even in decay.',                    ev: [2, 3] }
+    ],
+    evidence: PH('SET')
+  },
+  eco: {
+    label: 'Ecological Lens', kind: 'Literary Lens · Gate',
+    title: 'The Ecological Gate',
+    lensNote: 'Ecological lens: how the text portrays the relationship between humans and the natural/physical environment — and whose choices caused its condition.',
+    question: '[PLACEHOLDER QUESTION] Through an ecological lens, what does the novel suggest about humanity\'s relationship with the planet?',
+    claims: [
+      { text: '[PLACEHOLDER CLAIM A] The novel warns that abandoning the real world helps accelerate its decay.',            ev: [0, 2] },
+      { text: '[PLACEHOLDER CLAIM B] The novel treats environmental collapse as a backdrop, not a problem anyone solves.',   ev: [3, 5] }
+    ],
+    evidence: PH('ECO')
+  },
+  conflict: {
+    label: 'Conflict', kind: 'Literary Element · Key',
+    title: 'The Jade Key — Conflict',
+    lensNote: 'Conflict: the struggle between opposing forces (person vs. person, society, self, technology) that drives plot and reveals values.',
+    question: '[PLACEHOLDER QUESTION] What does the conflict between the gunters and IOI reveal about the novel\'s larger meaning?',
+    claims: [
+      { text: '[PLACEHOLDER CLAIM A] It is a fight over who controls shared culture and imagination.',                          ev: [2, 4] },
+      { text: '[PLACEHOLDER CLAIM B] It is a personal test of Wade\'s values more than a battle against a company.',            ev: [0, 3] },
+      { text: '[PLACEHOLDER CLAIM C] It shows that fighting a powerful system requires collaboration, not lone heroics.',       ev: [1, 5] }
+    ],
+    evidence: PH('CON')
+  },
+  marx: {
+    label: 'Marxist Lens', kind: 'Literary Lens · Gate',
+    title: 'The Marxist Gate',
+    lensNote: 'Marxist lens: how the text represents class, labor, ownership, and power — and whose interests the story\'s world serves.',
+    question: '[PLACEHOLDER QUESTION] Through a Marxist lens, what does the novel suggest about class and corporate power?',
+    claims: [
+      { text: '[PLACEHOLDER CLAIM A] IOI exposes how wealth turns people\'s labor and debt into control.',                                  ev: [1, 3] },
+      { text: '[PLACEHOLDER CLAIM B] The novel criticizes corporations while still celebrating a hero who wins a fortune.',                 ev: [0, 4] },
+      { text: '[PLACEHOLDER CLAIM C] The OASIS offers equality in theory but still reflects the same class divisions as reality.',           ev: [2, 5] }
+    ],
+    evidence: PH('MRX')
+  },
+  symbols: {
+    label: 'Symbols & Diction', kind: 'Literary Technique · Key',
+    title: 'The Crystal Key — Symbols & Diction',
+    lensNote: 'Symbols & diction: objects that stand for bigger ideas, and the specific word choices that shape tone and meaning.',
+    question: '[PLACEHOLDER QUESTION] How do Halliday\'s journal and 1980s pop-culture references (symbols and diction) develop the novel\'s meaning?',
+    claims: [
+      { text: '[PLACEHOLDER CLAIM A] The references symbolize nostalgia as both a source of connection and a way to avoid the present.',  ev: [0, 3] },
+      { text: '[PLACEHOLDER CLAIM B] The word choices around the Hunt turn culture into a commodity to be won.',                         ev: [2, 5] }
+    ],
+    evidence: PH('SYM')
+  },
+  moral: {
+    label: 'Moral / Philosophical Lens', kind: 'Literary Lens · Gate',
+    title: 'The Crystal Gate — Moral Lens',
+    lensNote: 'Moral/philosophical lens: what the text suggests about right and wrong, a good life, and what people owe one another.',
+    question: '[PLACEHOLDER QUESTION] Through a moral/philosophical lens, what does the novel suggest about how a person should live — in a virtual world or in reality?',
+    claims: [
+      { text: '[PLACEHOLDER CLAIM A] A meaningful life requires real human connection, even when reality is painful.',                    ev: [0, 5] },
+      { text: '[PLACEHOLDER CLAIM B] The novel suggests that escapism is not wrong in itself — it becomes harmful when it replaces action.', ev: [1, 3] },
+      { text: '[PLACEHOLDER CLAIM C] The ending is ambiguous: Wade wins by the rules of the game but questions whether the game is worth it.', ev: [2, 4] }
+    ],
+    evidence: PH('MOR')
+  }
+};
+
+/* =====================================================================
+   2.  STAGES — the whole game flow in order
+   ===================================================================== */
+const KEYNAME = { copper: 'Copper Key', jade: 'Jade Key', crystal: 'Crystal Key' };
+const LEVELTITLE = {
+  1: 'LEVEL 1 · THE COPPER KEY & ECOLOGICAL GATE',
+  2: 'LEVEL 2 · THE JADE KEY & MARXIST GATE',
+  3: 'LEVEL 3 · THE CRYSTAL KEY & MORAL GATE',
+  4: 'FINAL · THE GOLDEN EASTER EGG'
+};
+const STAGES = [
+  { id:'key1', level:1, env:'room', target:'stacks-model', kind:'question', q:'setting', award:'copper', keyName:'Copper Key',
+    riddle:'Among the miniatures a lonely genius left on his hobby table, one is no car, no castle, no rocket.\nIt is a neighborhood of mismatched homes piled on top of one another — a place a boy calls home though it was built to be left.\nFind the setting, shrunk down to fit a tabletop.',
+    hint:'A long table of tiny models sits in the north-west part of the room.' },
+  { id:'gate1', level:1, env:'room', target:'portal-room', kind:'teleport', to:'waste', keyName:'Copper Key',
+    riddle:'The Copper Key fits no ordinary lock. Three doors line the east wall. Two have brass knobs, because they lead to ordinary closets.\nFind the one door that cannot be opened by hand — and listen for it to answer the key.',
+    hint:'Face the east wall, toward the south end. Look for the plain door with no knob.' },
+  { id:'eco', level:1, env:'waste', target:'eco-gate', kind:'question', q:'eco', keyName:'Copper Key',
+    riddle:'Welcome to the world outside. Many frames stand in this wasteland — pipes, goalposts, fallen towers — and every one is dead at the foot.\nSeek the one arch with something still alive growing beneath it. That is the gate that asks what humanity has done to its home.',
+    hint:'It is far to the north-east. The haze hides things, so get close to each frame and look at its base.' },
+  { id:'key2', level:2, env:'waste', target:'ioi-badge', kind:'question', q:'conflict', award:'jade', keyName:'Jade Key',
+    riddle:'I carry no sword, yet I can bind a life for years. My logo is bright as a promise and sharp as a debt.\nI do not float or glow. I lie in a sheltered gap between the towers on the western side, among the odds and ends scavengers left behind.\nFind the token of a war between a lone gunter and a company that wants everything.',
+    hint:'Search the west side of the wasteland. The gap in the towers opens toward the east.' },
+  { id:'gate2', level:2, env:'waste', target:'portal-waste', kind:'teleport', to:'ioi', keyName:'Jade Key',
+    riddle:'The Jade Key shivers. Every hoop in this wasteland is hollow, showing only the same dead sky.\nFind the one ring whose center is filled — a dark disc the color of a banked fire — in the far north-west corner, where the towers crowd close.',
+    hint:'Go to the far north-west corner. Check every ring you pass: only one is filled in.' },
+  { id:'marx', level:2, env:'ioi', target:'marx-gate', kind:'question', q:'marx', keyName:'Jade Key',
+    riddle:'You stand in the house of the Sixers, where everything is counted and nothing is free.\nFive round steel doors line the north wall: air, archives, payroll, maintenance... and one whose label means to take back what was lent.\nThat is the gate that asks who owns the game, and who is owned by it.',
+    hint:'Walk to the far north wall and read the label on each round door.' },
+  { id:'key3', level:3, env:'ioi', target:'journal', kind:'question', q:'symbols', award:'crystal', keyName:'Crystal Key',
+    riddle:'Magnetic ribbons and scribbled pages — a dead man\'s mixtapes and the words he chose.\nIOI keeps a gallery of "acquired culture" under glass along the west wall. Five cases, five relics. Only one holds both tapes and a handwritten book.',
+    hint:'The museum gallery is along the west wall, toward the north end of the hall.' },
+  { id:'moral', level:3, env:'ioi', target:'crystal-gate', kind:'question', q:'moral', after:'toRoom', keyName:'Crystal Key',
+    riddle:'The last gate is made of nothing that rusts. In a row of dull gray data crystals, each wearing a red IOI tag, one is clear as a conscience and belongs to no one.\nIt asks what a good life is worth — and where it should be lived.',
+    hint:'The row of data crystals is along the east side of the hall, toward the north end.' },
+  { id:'egg', level:4, env:'room', target:'egg', kind:'victory', keyName:'',
+    riddle:'Something golden has appeared where the pedestal waited.\nHalliday\'s room has one thing left to give you.\nTake the Egg.',
+    hint:'The Easter Egg is in the center of the room.' }
+];
+
+const CHIPS = [
+  ['setting','Setting'],['eco','Ecological'],['conflict','Conflict'],['marx','Marxist'],['symbols','Symbols'],['moral','Moral'],['egg','Egg']
+];
+
+const TAKEAWAY =
+  'Halliday built the OASIS as an escape, yet his final test sends the winner back out of it. ' +
+  'The author does not simply use a virtual treasure hunt to entertain; instead, the author uses the quest to reveal that ' +
+  'meaning cannot be won inside a game, suggesting that — however painful reality may be — it is the only place where ' +
+  'real connection and real happiness exist. Now log out, and go be a person someone can find.';
+
+/* =====================================================================
+   3.  STATE
+   ===================================================================== */
+const debug = /[?&]debug/.test(location.search);
+const S = { started:false, stage:0, env:'room', modal:null, busy:false, hover:null,
+            wrong:0, hints:0, name:'', journal:[], keys:[], solved:new Set(), won:false };
+const $ = (id) => document.getElementById(id);
+const scene = $('scene'), cam = $('cam'), world = $('world');
+const INTERACT = {};   // id -> {name,msg,group}
+const CORE = {};       // id -> {mesh,light}  (glow on gates)
+
+/* =====================================================================
+   4.  SMALL HELPERS
+   ===================================================================== */
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function rngMaker(seed){ let a = seed; return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const MEM = {};   // in-memory fallback if localStorage is blocked (private mode, file://, school filters)
+function store(k, v){
+  if (v === undefined) { try { const r = JSON.parse(localStorage.getItem(k)); if (r != null) return r; } catch(e){} return MEM[k] != null ? MEM[k] : null; }
+  MEM[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} return null; }
+function beep(freq, dur, type){ try {
+  const C = window.AudioContext || window.webkitAudioContext; if(!C) return; beep.ctx = beep.ctx || new C();
+  const o = beep.ctx.createOscillator(), g = beep.ctx.createGain(); o.type = type||'square'; o.frequency.value = freq;
+  g.gain.value = 0.04; o.connect(g); g.connect(beep.ctx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, beep.ctx.currentTime + dur); o.stop(beep.ctx.currentTime + dur); } catch(e){} }
+const sfx = { ok(){ beep(660,.12); setTimeout(()=>beep(880,.18),110); }, bad(){ beep(150,.28,'sawtooth'); }, key(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.16),i*110)); } };
+
+function mk(parent, tag, attrs){
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+  parent.appendChild(e); return e;
+}
+function matStr(color, o){ o = o || {};
+  if (o.flat) return `shader:flat;color:${color}` + (o.op!=null?`;opacity:${o.op};transparent:true`:'') + (o.dbl?';side:double':'');
+  return `color:${color};roughness:${o.r!=null?o.r:0.9};metalness:${o.m!=null?o.m:0.05};flatShading:true` +
+    (o.e?`;emissive:${o.e};emissiveIntensity:${o.ei!=null?o.ei:0.8}`:'') +
+    (o.op!=null?`;opacity:${o.op};transparent:true`:'') + (o.dbl?';side:double':''); }
+function shape(parent, tag, pos, dim, color, o){ o = o || {};
+  const e = mk(parent, tag, { position: pos.join(' ') });
+  for (const k in dim) e.setAttribute(k, dim[k]);
+  if (o.rot) e.setAttribute('rotation', o.rot.join(' '));
+  if (o.scale) e.setAttribute('scale', o.scale.join(' '));
+  e.setAttribute('material', matStr(color, o)); return e; }
+const box = (p,pos,s,c,o) => shape(p,'a-box',pos,{width:s[0],height:s[1],depth:s[2]},c,o);
+const cyl = (p,pos,r,h,c,o) => shape(p,'a-cylinder',pos,{radius:r,height:h,'segments-radial':14},c,o);
+const sph = (p,pos,r,c,o) => shape(p,'a-sphere',pos,{radius:r,'segments-width':14,'segments-height':10},c,o);
+const pln = (p,pos,w,h,c,o) => shape(p,'a-plane',pos,{width:w,height:h},c,o);
+function txt(parent, str, pos, o){ o = o || {};
+  return mk(parent, 'a-text', { value:str, width:o.w||4, color:o.c||'#fff', align:o.align||'center', position:pos.join(' '),
+    rotation:(o.rot||[0,0,0]).join(' '), side:'double', 'wrap-count':o.wrap||30 }); }
+function spin(e, dur, axis){ e.setAttribute('animation__spin', { property:'rotation', to: axis||'0 360 0', dur:dur, easing:'linear', loop:true }); }
+function light(parent, pos, color, intensity, dist){
+  return mk(parent,'a-entity',{ light:`type:point;color:${color};intensity:${intensity};distance:${dist||14};decay:1`, position:pos.join(' ') }); }
+function texture(w, h, fn){ const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h); return c.toDataURL(); }
+function reg(id, group, name, msg){
+  group.setAttribute('data-obj', id);
+  group.classList.add('clickable');
+  group.querySelectorAll('*').forEach(e => e.classList.add('clickable'));
+  INTERACT[id] = { name:name, msg:msg, group:group };
+}
+function makeGlow(id, mesh, lightEl){ CORE[id] = { mesh:mesh, light:lightEl, on:false }; setGlow(id, false); }
+function setGlow(id, on){
+  const c = CORE[id]; if (!c) return;
+  if (c.crystal) return setGlowCrystal(on);
+  c.mesh.removeAttribute('animation__pulse');
+  c.mesh.setAttribute('material','opacity', on ? 0.5 : 0);
+  if (on) c.mesh.setAttribute('animation__pulse', { property:'material.opacity', from:0.25, to:0.65, dir:'alternate', loop:true, dur:1000, easing:'easeInOutSine' });
+  if (c.light) c.light.setAttribute('light','intensity', on ? 1.2 : 0);
+}
+/* Gates only reveal themselves (a soft glow) when the active gate is within ~9 m of the player */
+const _v = new AFRAME.THREE.Vector3(), _c = new AFRAME.THREE.Vector3();
+function glowTick(){
+  const st = STAGES[S.stage]; cam.object3D.getWorldPosition(_c);
+  Object.keys(CORE).forEach(id => { let on = false;
+    if (S.started && !S.won && st.target === id && INTERACT[id]) { INTERACT[id].group.object3D.getWorldPosition(_v); on = _v.distanceTo(_c) < 9; }
+    if (CORE[id].on !== on) { CORE[id].on = on; setGlow(id, on); } });
+}
+
+/* =====================================================================
+   5.  WORLD BUILDING
+   ===================================================================== */
+const ENVS = {
+  room:  { cx:0,   spawn:[0,9],   bounds:[-11.4,11.4,-11.4,11.4],  name:"HALLIDAY'S ROOM", sub:'1980s · The Archive of an Obsessive Genius' },
+  waste: { cx:200, spawn:[0,42],  bounds:[152,248,-48,48],         name:'ENVIRONMENT 2 · ECOLOGICAL DECAY', sub:'The Wasteland Grid' },
+  ioi:   { cx:400, spawn:[0,17],  bounds:[375,425,-44,19],         name:'ENVIRONMENT 3 · IOI HEADQUARTERS', sub:'The Corporate Vault Grid' }
+};
+const GROUPS = {};
+const STACKPAL = ['#b5552f','#5b86a3','#c9a13b','#6f8f58','#8b5a8f','#b86a73','#7d838c'];
+
+/* ---------- ENVIRONMENT 1 : HALLIDAY'S ROOM (1980s, wood paneling + shag carpet) ---------- */
+function buildRoom(){
+  const g = GROUPS.room = mk(world,'a-entity',{ id:'env-room', position:'0 0 0' });
+  const H = 4.6;
+  mk(g,'a-entity',{ light:'type:ambient;color:#fff0d6;intensity:0.95' });
+  [[-6,4,-5],[6,4,-5],[-6,4,6],[6,4,6]].forEach(p => light(g,p,'#ffdcae',0.5,22));
+
+  const carpet = texture(256,256,(c,w,h)=>{ c.fillStyle='#6e4426'; c.fillRect(0,0,w,h); const cols=['#a8561f','#556b2f','#d9bf86','#8a3d1c'];
+    for(let i=0;i<8;i++){ c.strokeStyle=cols[i%4]; c.lineWidth=i%2?10:5; c.strokeRect(14+i*14,14+i*14,w-28-i*28,h-28-i*28); } });
+  const wood = texture(256,256,(c,w,h)=>{ const r=rngMaker(11); for(let i=0;i<4;i++){ const l=44+r()*14; c.fillStyle=`hsl(26,42%,${l*0.6}%)`; c.fillRect(i*64,0,64,h);
+      c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(i*64,0,3,h); for(let k=0;k<14;k++){ c.fillStyle='rgba(0,0,0,.07)'; c.fillRect(i*64+6+r()*50,0,2,h); } } });
+  const fl = mk(g,'a-plane',{ rotation:'-90 0 0', width:24, height:24 }); fl.setAttribute('material',{ src:carpet, repeat:'12 12', roughness:1 });
+  const ce = mk(g,'a-plane',{ position:`0 ${H} 0`, rotation:'90 0 0', width:24, height:24 }); ce.setAttribute('material','color:#cfc3a6;roughness:1');
+  [[0,-12,0],[0,12,180],[12,0,-90],[-12,0,90]].forEach(w=>{
+    const wl = mk(g,'a-plane',{ position:`${w[0]} ${H/2} ${w[1]}`, rotation:`0 ${w[2]} 0`, width:24, height:H }); wl.setAttribute('material',{ src:wood, repeat:'12 1', roughness:1 }); });
+  [[-6,-6],[6,-6],[-6,6],[6,6]].forEach(p => box(g,[p[0],H-0.03,p[1]],[2.4,0.05,0.6],'#fffbe8',{ e:'#fff4d0', ei:0.7 }));
+
+  /* leaderboard (north wall) + wooden plaque (south wall) */
+  box(g,[0,2.4,-11.93],[7.7,4.5,0.12],'#2b1a0e');
+  const lb = mk(g,'a-plane',{ id:'lbPlane', position:'0 2.4 -11.86', width:7.2, height:4.05 }); lb.setAttribute('material',{ shader:'flat', src:'#lbCanvas' });
+  box(g,[0,2.8,11.93],[6.4,0.8,0.1],'#4a2f18'); txt(g,"HALLIDAY'S ROOM  ·  EST. 1980s",[0,2.8,11.86],{ w:5.8, c:'#e9d9b4', rot:[0,180,0] });
+
+  /* --- HOBBY TABLE with five miniatures (KEY = the Stacks) --- */
+  const ht = mk(g,'a-entity',{ position:'-6.5 0 -6.5' });
+  box(ht,[0,0.85,0],[4.6,0.1,1.7],'#6b4a2c'); [[-2.1,-.7],[2.1,-.7],[-2.1,.7],[2.1,.7]].forEach(p=>box(ht,[p[0],0.4,p[1]],[0.1,0.8,0.1],'#3a2515'));
+  box(ht,[0,0.93,0.5],[4.2,0.04,0.5],'#4e7a45',{ r:1 });   /* green hobby mat */
+  const stacks = mk(g,'a-entity',{ position:'-8.3 0.9 -6.5' });
+  box(stacks,[0,0.02,0],[1.3,0.04,0.9],'#4a4a52'); const rr = rngMaker(21);
+  for (let i=0;i<5;i++) for (let j=0;j<3;j++){ const lv = 3+Math.floor(rr()*5);
+    for (let l=0;l<lv;l++) box(stacks,[-0.5+i*0.25+(rr()-.5)*0.03, 0.08+l*0.075, -0.3+j*0.3+(rr()-.5)*0.03],[0.2,0.07,0.17],STACKPAL[Math.floor(rr()*7)]); }
+  reg('stacks-model', stacks, 'Miniature', 'Not now — this model has nothing new to tell you.');
+  const car = mk(g,'a-entity',{ position:'-6.9 0.9 -6.5', rotation:'0 25 0' });
+  box(car,[0,0.12,0],[0.7,0.14,0.28],'#b8bcc2',{ m:0.6 }); box(car,[0.02,0.23,0],[0.35,0.1,0.24],'#2a2f36'); [[-.22,-.15],[.22,-.15],[-.22,.15],[.22,.15]].forEach(p=>cyl(car,[p[0],0.07,p[1]],0.07,0.05,'#111',{ rot:[90,0,0] }));
+  reg('model-car', car, 'Miniature', 'A tiny sports car with gull-wing doors. Cool, but it isn\'t the place your riddle describes.');
+  const castle = mk(g,'a-entity',{ position:'-5.5 0.9 -6.5' });
+  box(castle,[0,0.15,0],[0.9,0.3,0.7],'#9c978a'); [[-.4,-.3],[.4,-.3],[-.4,.3],[.4,.3]].forEach(p=>{ cyl(castle,[p[0],0.4,p[1]],0.1,0.6,'#a8a396'); shape(castle,'a-cone',[p[0],0.8,p[1]],{ 'radius-bottom':0.13,'radius-top':0,height:0.22 },'#8a3d1c'); });
+  reg('model-castle', castle, 'Miniature', 'A tiny castle with a painted drawbridge. Charming, but a castle is not a neighborhood.');
+  const rocket = mk(g,'a-entity',{ position:'-4.7 0.9 -6.5' });
+  cyl(rocket,[0,0.45,0],0.1,0.7,'#e8e4da'); shape(rocket,'a-cone',[0,0.95,0],{ 'radius-bottom':0.1,'radius-top':0,height:0.25 },'#b5452f');
+  [0,120,240].forEach(a=>box(rocket,[Math.cos(a*Math.PI/180)*0.13,0.2,Math.sin(a*Math.PI/180)*0.13],[0.03,0.2,0.1],'#b5452f',{ rot:[0,-a,0] })); box(rocket,[0,0.04,0],[0.4,0.08,0.4],'#555');
+  reg('model-rocket', rocket, 'Miniature', 'A toy rocket on a launch stand. It is going somewhere; your riddle is about somewhere people are stuck.');
+
+  /* --- Couch + TV (west) --- */
+  const cou = mk(g,'a-entity',{ position:'-6.5 0 7.5', rotation:'0 -90 0' });
+  box(cou,[0,0.3,0],[2.4,0.5,0.95],'#a85a1c'); box(cou,[0,0.8,-0.4],[2.4,0.7,0.2],'#a85a1c'); [-1.2,1.2].forEach(x=>box(cou,[x,0.55,0],[0.2,0.6,0.95],'#8f4a14'));
+  box(cou,[0,0.58,0.05],[2,0.12,0.7],'#c0732a');
+  reg('couch', cou, 'Couch', 'A burnt-orange sofa with a suspicious number of crumbs. Comfortable, not clever.');
+  box(g,[-6.5,0.2,5.2],[0.7,0.4,1.6],'#5a3a22');   /* coffee table */
+  const tv = mk(g,'a-entity',{ position:'-11.2 0 7.5', rotation:'0 90 0' });
+  box(tv,[0,0.25,0],[1.5,0.5,0.9],'#3b2b1d'); box(tv,[0,0.95,0],[1.15,0.9,0.85],'#bdb8a8'); box(tv,[0,0.95,0.43],[0.88,0.65,0.05],'#16302a',{ e:'#6fa890', ei:0.45 });
+  box(tv,[0.4,0.55,0.25],[0.5,0.08,0.3],'#222');
+  reg('tv', tv, 'CRT television', 'Static hisses on the screen. A game console sits beneath it, long since powered down.');
+
+  /* --- Desk + computer (south) --- */
+  const dk = mk(g,'a-entity',{ position:'-5 0 10.6', rotation:'0 180 0' });
+  box(dk,[0,0.75,0],[2.2,0.08,0.9],'#7a5230'); [[-1,-.35],[1,-.35],[-1,.35],[1,.35]].forEach(p=>box(dk,[p[0],0.37,p[1]],[0.08,0.74,0.08],'#4a2f18'));
+  box(dk,[0,1.1,-0.1],[0.7,0.55,0.55],'#cfc7b0'); box(dk,[0,1.12,0.18],[0.5,0.38,0.03],'#14221b',{ e:'#7fb08f', ei:0.5 }); box(dk,[0,0.82,0.3],[0.7,0.05,0.22],'#bfb7a0');
+  reg('computer', dk, 'Beige computer', 'A beige home computer with a blinking cursor. "LOADING..." it says, forever.');
+
+  /* --- Bookshelf + poster (west) --- */
+  const bs = mk(g,'a-entity',{ position:'-11.7 0 -1.5', rotation:'0 90 0' });
+  box(bs,[0,1.3,0],[3,2.6,0.5],'#4b2f1a'); const bp=['#a8402e','#2f5f86','#b8921f','#3f6d4e','#6a4b86','#d8d0c0'], br=rngMaker(5);
+  [0.55,1.25,1.95].forEach(y=>{ box(bs,[0,y,0.02],[2.9,0.04,0.45],'#2e1c0e'); for(let i=0;i<12;i++){ const h=0.35+br()*0.22; box(bs,[-1.3+i*0.23,y+0.02+h/2,0.03],[0.13,h,0.3],bp[Math.floor(br()*6)]); } });
+  reg('bookshelf', bs, 'Bookshelf', 'Manuals, comics, and strategy guides. Halliday read everything — but this isn\'t what your riddle describes.');
+  const po = mk(g,'a-entity',{ position:'-11.95 2.2 3', rotation:'0 90 0' });
+  box(po,[0,0,0],[1.3,1.8,0.04],'#2a1a3a'); txt(po,'DUNGEONS\n&\nDRAGONS',[0,0.35,0.03],{ w:1.1, c:'#e1b04a' }); txt(po,'ROLL FOR INITIATIVE',[0,-0.55,0.03],{ w:1, c:'#d9c9a0' });
+  reg('poster', po, 'Poster', 'A dog-eared tabletop-game poster. Fun, but not what your riddle is looking for.');
+
+  /* --- Arcade cabinets (east, north end) --- */
+  function arcade(id, z, col, msg){
+    const a = mk(g,'a-entity',{ position:`11.3 0 ${z}`, rotation:'0 -90 0' });
+    box(a,[0,0.9,0],[0.9,1.8,0.8],col); box(a,[0,1.35,0.4],[0.7,0.52,0.05],'#1a2a20',{ e:'#c9a14a', ei:0.5 }).setAttribute('rotation','-12 0 0');
+    box(a,[0,0.98,0.5],[0.8,0.08,0.35],'#2a2a2a'); sph(a,[-0.2,1.08,0.52],0.05,'#c93a2a'); box(a,[0,1.92,0.1],[0.9,0.26,0.5],'#2a2218'); txt(a,'ARCADE',[0,1.92,0.36],{ w:1, c:'#e9d9b4' });
+    reg(id, a, 'Arcade', msg); }
+  arcade('arcade1', -9.5, '#5a2a1c', 'An arcade cabinet humming a looping attract-mode tune. Nostalgic — but not your answer.');
+  arcade('arcade2', -7,   '#1f3a4a', 'Another cabinet, high score initials "AAA". Not what you\'re looking for.');
+
+  /* --- East doors: two closets and the gate (no knob) --- */
+  function door(id, z, label, isGate, msg){
+    const d = mk(g,'a-entity',{ position:`11.9 0 ${z}`, rotation:'0 -90 0' });
+    box(d,[0,1.2,-0.02],[1.3,2.5,0.1],'#3b2512'); box(d,[0,1.1,0.05],[1.0,2.2,0.07],'#8a5a30');
+    box(d,[0,1.6,0.092],[0.7,0.8,0.02],'#7a4c26'); box(d,[0,0.55,0.092],[0.7,0.7,0.02],'#7a4c26');
+    if (!isGate){ sph(d,[0.38,1.1,0.12],0.05,'#c9a24a',{ m:0.8 }); box(d,[0,1.95,0.1],[0.36,0.1,0.01],'#c9a24a',{ m:0.6 }); txt(d,label,[0,1.95,0.108],{ w:0.5, c:'#2b1a0e' }); }
+    else box(d,[0,1.95,0.1],[0.36,0.1,0.01],'#8a6f3a',{ m:0.5 });
+    reg(id, d, 'Door', msg);
+    if (isGate){ const core = pln(d,[0,1.1,0.11],0.95,2.15,'#ffe2a8',{ flat:true, op:0, dbl:true }); core.classList.add('clickable'); makeGlow(id, core, null); }
+  }
+  door('door-closet', -2, 'CLOSET', false, 'Just a closet: extension cords, mothballs, and a very old VHS rewinder.');
+  door('door-supply', 2.5, 'SUPPLIES', false, 'A supply room. Batteries, floppy disks, and one lonely roll of tape.');
+  door('portal-room', 7, '', true, 'The door is quiet and plain. Nothing happens... yet.');
+
+  /* --- misc decoys --- */
+  const bb = mk(g,'a-entity',{ position:'4 0 11.3', rotation:'0 180 0' });
+  box(bb,[0,0.3,0],[1.6,0.6,0.5],'#4b2f1a'); box(bb,[0,0.78,0],[0.9,0.32,0.2],'#111'); [-0.27,0.27].forEach(x=>cyl(bb,[x,0.78,0.11],0.11,0.04,'#555',{ rot:[90,0,0] }));
+  reg('boombox', bb, 'Boombox', 'A boombox with a cassette stuck inside. Not what your riddle is about.');
+  const fc = mk(g,'a-entity',{ position:'9 0 11.3', rotation:'0 180 0' });
+  [0,0.8].forEach(x=>box(fc,[x,0.65,0],[0.75,1.3,0.6],'#6f7a74',{ m:0.3 })); box(fc,[0,1.0,0.31],[0.3,0.04,0.02],'#222'); box(fc,[0.8,1.0,0.31],[0.3,0.04,0.02],'#222');
+  reg('cabinet', fc, 'Filing cabinets', 'Filing cabinets full of old partnership paperwork. Dry reading.');
+  const lamp = mk(g,'a-entity',{ position:'-9.5 0 -10' }); cyl(lamp,[0,0.8,0],0.03,1.6,'#2a2a2a'); shape(lamp,'a-cone',[0,1.7,0],{ 'radius-bottom':0.3,'radius-top':0.12,height:0.35 },'#d9c28a');
+  const pe = mk(g,'a-entity',{ position:'0 0 0' }); cyl(pe,[0,0.5,0],0.5,1,'#cfc3a0',{ m:0.3 }); cyl(pe,[0,1.02,0],0.55,0.06,'#a89868',{ m:0.5 });
+  reg('pedestal', pe, 'Empty pedestal', 'An empty pedestal. Something is missing — but not yet.');
+}
+
+/* Easter egg is created only when the player has earned it */
+function spawnEgg(){
+  if (INTERACT.egg) { INTERACT.egg.group.setAttribute('visible', true); return; }
+  const e = mk(GROUPS.room,'a-entity',{ position:'0 1.62 0' });
+  const egg = sph(e,[0,0,0],0.33,'#e1b04a',{ m:0.9, r:0.2, e:'#ffb300', ei:0.5 }); egg.setAttribute('scale','1 1.35 1');
+  spin(e, 5000); e.setAttribute('animation__bob', { property:'position', to:'0 1.78 0', dir:'alternate', loop:true, dur:1400, easing:'easeInOutSine' });
+  light(e,[0,0,0],'#e1b04a',1.2,12);
+  reg('egg', e, 'The Golden Easter Egg', 'Not yet.');
+  scene.querySelector('#cam').components.raycaster.refreshObjects();
+}
+
+/* ---------- ENVIRONMENT 2 : WASTELAND GRID (large, hazy, cluttered) ---------- */
+function buildWaste(){
+  const g = GROUPS.waste = mk(world,'a-entity',{ id:'env-waste', position:'200 0 0', visible:'false' });
+  const skyTex = texture(8,256,(c,w,h)=>{ const gr=c.createLinearGradient(0,0,0,h); gr.addColorStop(0,'#3a2a20'); gr.addColorStop(0.6,'#8c6a4c'); gr.addColorStop(1,'#b48a62'); c.fillStyle=gr; c.fillRect(0,0,w,h); });
+  const sky = mk(g,'a-sky',{}); sky.setAttribute('material',{ shader:'flat', src:skyTex, fog:false });
+  mk(g,'a-entity',{ light:'type:ambient;color:#d0a77f;intensity:0.95' });
+  mk(g,'a-entity',{ light:'type:directional;color:#ffd09a;intensity:0.6', position:'-10 18 8' });
+
+  const grid = texture(256,256,(c,w,h)=>{ const r=rngMaker(3); c.fillStyle='#4a3a2a'; c.fillRect(0,0,w,h);
+    for(let i=0;i<260;i++){ c.fillStyle=`rgba(${70+r()*40},${55+r()*20},${35},${.25+r()*.25})`; c.fillRect(r()*w,r()*h,6+r()*14,3+r()*8); } });
+  const gd = mk(g,'a-plane',{ rotation:'-90 0 0', width:320, height:320 }); gd.setAttribute('material',{ src:grid, repeat:'160 160', roughness:1 });
+
+  const OBJ = [[22,-30],[-36,-6],[-40,-40],[-20,-22],[30,-8],[-8,-38],[8,10],[-12,-32],[34,-38],[12,-18],[0,42],[24,20],[-30,24]];
+  const free = (x,z,rad) => OBJ.every(k => Math.hypot(x-k[0], z-k[1]) > rad);
+  const r = rngMaker(77), cols = ['#8a4b2a','#6e4a3a','#5b6b5e','#7a6a3a','#4e5560','#913b2e','#6d5a48'];
+
+  /* the Stacks: lots of towers; also a rim of tall ones for fenced-in feeling */
+  for (let i=0;i<46;i++){ const x=(r()*2-1)*66, z=(r()*2-1)*66; if(!free(x,z,7)) continue;
+    const lv = 2+Math.floor(r()*5);
+    for (let l=0;l<lv;l++) box(g,[x+(r()-.5)*0.5, 0.55+l*1.1, z+(r()-.5)*0.4],[2.4,1.05,1.5],cols[(l+i)%cols.length],{ rot:[0,(r()-.5)*14,0] }); }
+  for (let i=0;i<20;i++){ const a=i/20*Math.PI*2, x=Math.cos(a)*58, z=Math.sin(a)*58; for(let l=0;l<7;l++) box(g,[x,0.55+l*1.1,z],[3,1.05,2],cols[(l+i)%cols.length]); }
+
+  /* a rusted frame (Eco Gate if alive=true, otherwise a decoy). kind = box | pipe | lean */
+  function frame(id, x, z, ry, kind, alive, name, msg){
+    const a = mk(g,'a-entity',{ position:`${x} 0 ${z}`, rotation:`0 ${ry} 0` }), w = 4.4, h = kind==='lean' ? 3.4 : 4.4, c = kind==='pipe' ? '#6f6a5e' : '#6a3b24';
+    if (kind==='pipe'){ cyl(a,[-w/2,h/2,0],0.28,h,c,{ m:0.4 }); cyl(a,[w/2,h/2,0],0.28,h,c,{ m:0.4 }); cyl(a,[0,h+0.2,0],0.28,w+0.5,c,{ rot:[0,0,90], m:0.4 }); }
+    else { box(a,[-w/2,h/2,0],[0.6,h,0.6],c,{ m:0.3 }); box(a,[kind==='lean'?w/2-0.6:w/2,h/2,0],[0.6,h,0.6],c,{ m:0.3, rot:kind==='lean'?[0,0,-14]:[0,0,0] }); box(a,[0,h+0.2,0],[w+0.6,0.5,0.6],c,{ m:0.3, rot:kind==='lean'?[0,0,-6]:[0,0,0] }); }
+    if (alive){ cyl(a,[0.3,0.3,0.9],0.03,0.6,'#4f6f2a'); sph(a,[0.3,0.65,0.9],0.12,'#6fa040'); sph(a,[0.46,0.55,0.9],0.08,'#7cb04a'); }
+    else { cyl(a,[0.3,0.2,0.9],0.03,0.4,'#4a3a2a',{ rot:[0,0,20] }); sph(a,[0.4,0.42,0.9],0.07,'#5a4a30'); }
+    if (alive){ const core = mk(a,'a-plane',{ position:`0 ${h/2} 0.05`, width:3.7, height:h-0.2 }); core.setAttribute('material','shader:flat;color:#9cd67a;opacity:0;transparent:true;side:double'); reg(id, a, name, msg); core.classList.add('clickable'); makeGlow(id, core, null); }
+    else reg(id, a, name, msg);
+  }
+  frame('eco-gate',   22, -30, -20, 'box',  true,  'Frame', 'The arch is silent for now. Find the object your riddle describes first.');
+  frame('frame-pipe', -20,-22,  15, 'pipe', false, 'Frame', 'A pipe frame. Dead brown stubble at its feet — nothing grows here.');
+  frame('frame-goal', 30, -8,  -60, 'box',  false, 'Frame', 'A goalpost-like frame. Cracked dirt below, nothing living.');
+  frame('frame-lean', -8, -38,  30, 'lean', false, 'Frame', 'A fallen, leaning frame. The ground beneath it is dust.');
+  frame('frame-gate2', 8,  10, 100, 'box',  false, 'Frame', 'A frame with nothing growing under it. Dead as the rest.');
+
+  /* ---- Badge pocket (west). Entrance faces east. ---- */
+  [[-36,-10.5,4],[-36,-1.5,5],[-41,-6,6],[-32.5,-10.8,3],[-32.5,-1.2,3]].forEach(c=>{ for(let l=0;l<c[2];l++) box(g,[c[0],0.55+l*1.1,c[1]],[2.5,1.05,1.6],cols[(l+Math.floor(-c[0]))%cols.length],{ rot:[0,(l%2?4:-4),0] }); });
+  box(g,[-37.5,0.4,-6],[1.1,0.8,0.8],'#5b4630');
+  const bd = mk(g,'a-entity',{ position:'-37.5 0.85 -6', rotation:'-15 20 0' });
+  cyl(bd,[0,0.22,0],0.3,0.04,'#a8322e',{ rot:[90,0,0], m:0.4 }); cyl(bd,[0,0.22,0.025],0.22,0.02,'#e8e4da',{ rot:[90,0,0] }); txt(bd,'IOI',[0,0.22,0.045],{ w:0.7, c:'#a8322e' });
+  cyl(bd,[0.45,0.04,0.2],0.05,0.45,'#d8cbb0',{ rot:[0,20,90] });
+  reg('ioi-badge', bd, 'Object', 'Not now.');
+  const boot = mk(g,'a-entity',{ position:'-38.8 0 -4.4' }); box(boot,[0,0.1,0],[0.3,0.2,0.12],'#3a2a1a'); box(boot,[0.1,0.3,0],[0.14,0.3,0.12],'#3a2a1a');
+  reg('scrap-boot', boot, 'Object', 'A single cracked boot. Whoever owned it kept walking.');
+  const can = mk(g,'a-entity',{ position:'-39 0.12 -7.6' }); cyl(can,[0,0,0],0.1,0.25,'#6a6f60',{ m:0.5 });
+  reg('scrap-can', can, 'Object', 'A dented canteen. Empty.');
+  const flag = mk(g,'a-entity',{ position:'-36.3 0.9 -3' }); cyl(flag,[0,0.8,0],0.02,1.6,'#444'); box(flag,[0.28,1.4,0],[0.55,0.35,0.02],'#9a8a6a');
+  reg('scrap-flag', flag, 'Object', 'A torn scrap of cloth tied to a pole. Not what you\'re searching for.');
+  /* a second pocket with different junk */
+  [[26,18,4],[26,24.5,3],[31,21,5]].forEach(c=>{ for(let l=0;l<c[2];l++) box(g,[c[0],0.55+l*1.1,c[1]],[2.5,1.05,1.6],cols[(l+2)%cols.length]); });
+  const rad = mk(g,'a-entity',{ position:'24 0.5 21.3' }); box(rad,[0,0.2,0],[0.5,0.4,0.2],'#3a3a3a'); cyl(rad,[0.1,0.6,0],0.01,0.5,'#aaa');
+  reg('scrap-radio', rad, 'Object', 'A broken radio. A faint hiss, no signal.');
+  const doll = mk(g,'a-entity',{ position:'23.4 0.15 22.6' }); sph(doll,[0,0.25,0],0.1,'#d8b89a'); box(doll,[0,0.08,0],[0.16,0.18,0.1],'#8a4a6a');
+  reg('scrap-doll', doll, 'Object', 'A child\'s doll with one eye. Sad, but not your clue.');
+
+  /* ---- Portal ring (far NW). The only ring with a filled center. ---- */
+  const pw = mk(g,'a-entity',{ position:'-40 0 -40', rotation:'0 25 0' });
+  shape(pw,'a-torus',[0,2.1,0],{ radius:1.8,'radius-tubular':0.2,'segments-tubular':32 },'#a8451c');
+  const disc = mk(pw,'a-circle',{ position:'0 2.1 0', radius:1.62 }); disc.setAttribute('material','shader:flat;color:#2a100a;opacity:0.92;transparent:true;side:double');
+  const pc = mk(pw,'a-circle',{ position:'0 2.1 0.03', radius:1.62 }); pc.setAttribute('material','shader:flat;color:#ff9a3a;opacity:0;transparent:true;side:double');
+  box(pw,[0,0.1,0],[3,0.2,1],'#2a2218');
+  [[-4,3,-2],[4.5,4,1.5],[0,5,-4]].forEach(c=>{ for(let l=0;l<c[1];l++) box(pw,[c[0],0.55+l*1.1,c[2]],[2.4,1.05,1.5],cols[l%cols.length]); });
+  reg('portal-waste', pw, 'Ring', 'The ring is still. It is not ready for you.'); pc.classList.add('clickable'); makeGlow('portal-waste', pc, null);
+  /* decoy rings: hollow */
+  function ring(id,x,z,col,rad,tube,ry,msg){ const p=mk(g,'a-entity',{ position:`${x} 0 ${z}`, rotation:`0 ${ry} 0` }); shape(p,'a-torus',[0,rad+0.1,0],{ radius:rad,'radius-tubular':tube,'segments-tubular':24 },col,{ r:1 }); reg(id,p,'Ring',msg); }
+  ring('ring-tire', -12,-32,'#1a1a1a',1.6,0.5,10,'A giant tire standing on its edge. Hollow, showing only the same dead sky.');
+  ring('ring-pipe',  34,-38,'#6a6f68',1.9,0.18,-30,'A bent pipe ring, hollow in the middle. Not this one.');
+  ring('ring-gear',  12,-18,'#7a5a3a',1.5,0.3,60,'A rusted gear ring, hollow. Nothing fills it.');
+
+  /* smokestacks, trees, heaps */
+  [[-60,-60],[56,-62],[-10,-70],[70,-10]].forEach(p=>{ const s=mk(g,'a-entity',{ position:`${p[0]} 0 ${p[1]}` });
+    cyl(s,[0,8,0],1.4,16,'#4a4540'); cyl(s,[0,16.1,0],1.5,0.4,'#2a2724'); for(let i=0;i<4;i++) sph(s,[(i-1.5)*0.9,17.5+i*1.6,0],1.3+i*0.35,'#6d6762',{ op:0.45 }); });
+  [[-9,-8],[16,6],[-20,12],[6,-20],[21,-14],[-28,-14],[-44,-24],[40,-22]].forEach(p=>{ const t=mk(g,'a-entity',{ position:`${p[0]} 0 ${p[1]}` });
+    cyl(t,[0,1.6,0],0.16,3.2,'#2c211a'); [[0.6,2.6,25],[-0.6,2.2,-30],[0.1,3.1,10]].forEach(b=>cyl(t,[b[0],b[1],0],0.06,1.6,'#2c211a',{ rot:[0,0,b[2]] })); });
+  for (let i=0;i<22;i++){ const x=(r()*2-1)*56, z=(r()*2-1)*56; if(!free(x,z,6)) continue; const s=1+r()*2.2; shape(g,'a-dodecahedron',[x,s*0.3,z],{ radius:s },'#3d3328',{ scale:[1.3,0.5,1.1] }); }
+
+  const bb = mk(g,'a-entity',{ position:'-14 0 12', rotation:'0 40 0' });
+  cyl(bb,[0,2.5,0],0.15,5,'#444'); box(bb,[0,5.4,0],[5,2.4,0.2],'#26242a'); txt(bb,'OASIS\nIT\'S WHERE LIFE HAPPENS',[0,5.4,0.15],{ w:4.6, c:'#d9c9a0' });
+  reg('billboard', bb, 'Billboard', 'A faded OASIS advertisement. Persuasive — but not what you\'re searching for.');
+  const ba = mk(g,'a-entity',{ position:'-7 0 24' }); [[0,0],[0.9,0.2],[0.4,0.9],[-0.7,0.7]].forEach(p=>cyl(ba,[p[0],0.55,p[1]],0.38,1.1,'#7a3b24',{ m:0.4 }));
+  reg('barrels', ba, 'Oil drums', 'Empty, rusted oil drums. Nothing helpful here.');
+  const ti = mk(g,'a-entity',{ position:'3 0 28' }); for (let i=0;i<4;i++) shape(ti,'a-torus',[0,0.2+i*0.32,0],{ radius:0.55,'radius-tubular':0.2,'segments-tubular':12 },'#161616',{ rot:[90,0,0] });
+  reg('tires', ti, 'Tires', 'A tower of scrap tires. A pile of old things, stacked up — but not your object.');
+}
+
+/* ---------- ENVIRONMENT 3 : IOI HEADQUARTERS (sterile, corporate, bright) ---------- */
+function buildIOI(){
+  const g = GROUPS.ioi = mk(world,'a-entity',{ id:'env-ioi', position:'400 0 0', visible:'false' });
+  mk(g,'a-entity',{ light:'type:ambient;color:#f4f6fa;intensity:1.0' });
+  light(g,[0,6,5],'#ffffff',0.45,45); light(g,[0,6,-25],'#ffffff',0.45,45);
+
+  const grid = texture(256,256,(c,w,h)=>{ c.fillStyle='#c8cdd5'; c.fillRect(0,0,w,h); c.strokeStyle='#a4abb7'; c.lineWidth=3; c.strokeRect(0,0,w,h); });
+  const fl = mk(g,'a-plane',{ position:'0 0 -12.5', rotation:'-90 0 0', width:52, height:65 }); fl.setAttribute('material',{ src:grid, repeat:'26 33', roughness:0.5, metalness:0.15 });
+  const ce = mk(g,'a-plane',{ position:'0 7 -12.5', rotation:'90 0 0', width:52, height:65 }); ce.setAttribute('material','color:#dde1e7;roughness:1');
+  [[0,3.5,-45,0,52],[0,3.5,20,180,52],[26,3.5,-12.5,-90,65],[-26,3.5,-12.5,90,65]].forEach(w=>{
+    const wl = mk(g,'a-plane',{ position:`${w[0]} ${w[1]} ${w[2]}`, rotation:`0 ${w[3]} 0`, width:w[4], height:7 }); wl.setAttribute('material','color:#e6e9ee;roughness:0.9'); });
+  [15,5,-5,-15,-25,-35].forEach(z=>box(g,[0,6.95,z],[40,0.05,0.4],'#fff',{ e:'#ffffff', ei:1.0 }));
+  [-14,14].forEach(x=>[10,-2,-14,-26,-38].forEach(z=>box(g,[x,3.5,z],[0.9,7,0.9],'#cfd4db',{ m:0.2 })));
+  txt(g,'INNOVATIVE ONLINE INDUSTRIES',[0,6,-44.9],{ w:22, c:'#a8322e' });
+  txt(g,'YOUR FUTURE IS OUR PROPERTY',[0,0.9,19.9],{ w:10, c:'#8a8f99', rot:[0,180,0] });
+
+  /* cubicle farm */
+  [3,-3,-9].forEach(z=>[-9,-4.5,0,4.5,9].forEach(x=>{ const cb=mk(g,'a-entity',{ position:`${x} 0 ${z}` });
+    box(cb,[0,0.74,0],[1.8,0.07,0.8],'#b9a98a'); box(cb,[0,0.7,-0.45],[2.0,1.4,0.05],'#8d98ad'); box(cb,[-1.0,0.7,0],[0.05,1.4,0.9],'#8d98ad'); box(cb,[1.0,0.7,0],[0.05,1.4,0.9],'#8d98ad');
+    box(cb,[0,1.0,-0.2],[0.5,0.35,0.3],'#cfc7b0'); }));
+  const rc = mk(g,'a-entity',{ position:'0 0 13' });
+  box(rc,[0,0.6,0],[6,1.2,1],'#dfe3ea',{ m:0.2 }); box(rc,[0,1.22,0],[6.2,0.06,1.2],'#8d98ad'); txt(rc,'SIXER CHECK-IN',[0,0.7,0.52],{ w:4, c:'#3a4254' });
+  reg('reception', rc, 'Reception desk', 'A sleek reception desk for visiting Sixers. A bored hologram receptionist waves, but it can\'t help your quest.');
+  const sr = mk(g,'a-entity',{ position:'-8 0 -41' });
+  [0,1.1,2.2].forEach(x=>{ box(sr,[x,1.4,0],[0.9,2.8,0.9],'#26282e'); for(let i=0;i<8;i++) box(sr,[x,0.4+i*0.32,0.46],[0.7,0.05,0.02],'#fff',{ e:i%3?'#6fbf7a':'#c9524a', ei:1.1 }); });
+  reg('servers', sr, 'Server racks', 'Humming server racks full of data about thousands of indentured gunters. Not your object.');
+  const lw = mk(g,'a-entity',{ position:'25.9 3.2 -2', rotation:'0 -90 0' });
+  box(lw,[0,0,0],[5,2.2,0.1],'#2b3040'); txt(lw,'LOYALTY CENTER\nAGENTS WANTED',[0,0,0.07],{ w:4.2, c:'#e6d6d2' });
+  reg('logo-wall', lw, 'Recruitment board', 'A cheerful recruitment board. The small print is... less cheerful. Still not your object.');
+
+  /* five round vault doors on the north wall; one is the Marxist Gate */
+  function vault(id, x, label, isGate, msg){
+    const v = mk(g,'a-entity',{ position:`${x} 0 -44.5` });
+    cyl(v,[0,2.4,0],1.8,0.5,'#9aa3b5',{ rot:[90,0,0], m:0.85, r:0.35 }); cyl(v,[0,2.4,0.3],1.25,0.2,'#6f788c',{ rot:[90,0,0], m:0.8 });
+    [0,60,120].forEach(a=>box(v,[0,2.4,0.45],[2.6,0.14,0.1],'#cfd6e6',{ rot:[0,0,a], m:0.8 })); cyl(v,[0,2.4,0.5],0.3,0.2,'#b8923a',{ rot:[90,0,0], m:0.8 });
+    txt(v,label,[0,4.7,0.3],{ w:3.2, c:'#3a4254' });
+    reg(id, v, 'Vault door', msg);
+    if (isGate){ const mc = mk(v,'a-circle',{ position:'0 2.4 0.58', radius:1.75 }); mc.setAttribute('material','shader:flat;color:#c9524a;opacity:0;transparent:true;side:double'); mc.classList.add('clickable'); makeGlow(id, mc, null); }
+  }
+  vault('vault-air', -20, 'AIR HANDLING', false, 'A hatch marked AIR HANDLING. Whirring fans behind it. Not the gate.');
+  vault('vault-arch', -9, 'ARCHIVES', false, 'A hatch marked ARCHIVES. Sealed with an IOI padlock. Not the gate.');
+  vault('vault-pay', 2, 'PAYROLL', false, 'A hatch marked PAYROLL. The paychecks are... conditional. Not the gate.');
+  vault('marx-gate', 14, 'ASSET RECLAMATION', true, 'The vault stays sealed. Follow your riddle first.');
+  vault('vault-maint', 22, 'MAINTENANCE', false, 'A hatch marked MAINTENANCE. Mops, mostly. Not the gate.');
+
+  /* museum of acquired culture (west) */
+  txt(g,'MUSEUM OF ACQUIRED CULTURE',[-25.9,4.6,-23],{ w:9, c:'#a8322e', rot:[0,90,0] });
+  function museum(id, z, plaque, fill, msg){
+    const c = mk(g,'a-entity',{ position:`-23 0 ${z}`, rotation:'0 90 0' });
+    box(c,[0,0.5,0],[1.2,1,1.2],'#8c8f96',{ m:0.2 }); box(c,[0,1.03,0],[1.3,0.06,1.3],'#555a66'); box(c,[0,1.4,0],[1.15,0.75,1.15],'#bfe3ff',{ op:0.18, r:0.1 });
+    box(c,[0,0.35,0.61],[0.7,0.14,0.02],'#d8d0b0'); txt(c,plaque,[0,0.35,0.63],{ w:0.62, c:'#2a2a2a' });
+    fill(c); reg(id, c, 'Display case', msg); return c; }
+  museum('case-shoes', -14, 'SNEAKERS, 1985', c=>{ box(c,[-0.2,1.1,0],[0.4,0.18,0.2],'#c9c4b8'); box(c,[0.25,1.1,0],[0.4,0.18,0.2],'#c9c4b8'); }, 'A pair of vintage sneakers. Acquired, catalogued, priced. Not what you want.');
+  museum('case-trophy', -18.5, 'TROPHY, ARCADE', c=>{ cyl(c,[0,1.2,0],0.15,0.4,'#c9a24a',{ m:0.9 }); cyl(c,[0,1.02,0],0.22,0.06,'#6a5a3a'); }, 'An arcade high-score trophy. Impressive, but not your relic.');
+  museum('case-dice', -23, 'DICE, TWENTY-SIDED', c=>{ [[-.2,0],[.1,.15],[.25,-.15]].forEach((p,i)=>shape(c,'a-icosahedron',[p[0],1.15,p[1]],{ radius:0.1 },['#b5452f','#2f5f86','#3f6d4e'][i])); }, 'A set of twenty-sided dice. Not tapes, not a book.');
+  museum('journal', -27.5, 'PERSONAL EFFECTS', c=>{
+    box(c,[-0.16,1.08,0],[0.3,0.03,0.42],'#e8dcb0',{ rot:[0,0,6] }); box(c,[0.16,1.08,0],[0.3,0.03,0.42],'#e8dcb0',{ rot:[0,0,-6] }); box(c,[0,1.06,0],[0.64,0.02,0.46],'#6a2f2a');
+    [['#c9524a',-0.2],['#4a7fb8',0.05],['#d4b04a',0.3]].forEach((t,i)=>box(c,[0.4,1.1+i*0.045,t[1]*0.6],[0.22,0.04,0.14],t[0],{ rot:[0,i*12,0] })); }, 'Not yet.');
+  museum('case-vhs', -32, 'VIDEOTAPES', c=>{ [0,1,2].forEach(i=>box(c,[-0.2+i*0.0,1.1+i*0.05,0],[0.4,0.05,0.22],'#222')); }, 'A stack of videotapes. Tapes, yes, but not the ones with the handwritten book beside them.');
+
+  /* row of data crystals (east). One is clear, with no IOI tag: the Crystal Gate. */
+  function crystal(id, z, isGate, msg){
+    const c = mk(g,'a-entity',{ position:`19 0 ${z}` });
+    cyl(c,[0,0.45,0],0.5,0.9,'#8c8f96',{ m:0.2 });
+    const cr = shape(c,'a-octahedron',[0,1.9,0],{ radius:0.5 },isGate?'#eef8ff':'#7f8b9c',{ scale:[0.8,2.1,0.8], op:isGate?0.55:0.85, m:0.4, r:0.15, e:isGate?'#cfeaff':undefined, ei:0.1 });
+    if (!isGate){ box(c,[0,1.0,0.52],[0.3,0.16,0.02],'#a8322e'); txt(c,'IOI',[0,1.0,0.54],{ w:0.4, c:'#fff' }); }
+    reg(id, c, 'Crystal', msg);
+    if (isGate){ const cl = light(c,[0,2.2,0.5],'#dff2ff',0,8); CORE[id] = { mesh:cr, light:cl, crystal:true, on:false }; setGlow(id,false); }
+  }
+  crystal('crystal-a', -14, false, 'A gray data crystal with a red IOI tag. Property of IOI. Not the gate.');
+  crystal('crystal-gate', -19, true, 'The crystal is dull and cold. Not yet.');
+  crystal('crystal-b', -24, false, 'A gray data crystal wearing an IOI tag. Not the gate.');
+  crystal('crystal-c', -29, false, 'A gray data crystal wearing an IOI tag. Not the gate.');
+  crystal('crystal-d', -34, false, 'A gray data crystal wearing an IOI tag. Not the gate.');
+}
+function setGlowCrystal(on){ const c = CORE['crystal-gate']; if(!c) return; c.mesh.removeAttribute('animation__pulse');
+  c.mesh.setAttribute('material','opacity', on ? 0.9 : 0.55); c.mesh.setAttribute('material','emissiveIntensity', on ? 1.2 : 0.1);
+  if (on) c.mesh.setAttribute('animation__pulse',{ property:'material.emissiveIntensity', from:0.5, to:1.6, dir:'alternate', loop:true, dur:900, easing:'easeInOutSine' });
+  c.light.setAttribute('light','intensity', on ? 1.2 : 0); }
+
+/* =====================================================================
+   6.  LEADERBOARD  (canvas texture on the wall + HTML table)
+   ===================================================================== */
+const BOTS = [
+  { n:'Parzival',            s:9800 }, { n:'Art3mis',            s:9600 }, { n:'Aech',              s:9100 },
+  { n:'Daito',               s:8500 }, { n:'Shoto',              s:8400 },
+  { n:'IOI Sixer #655321',   s:6200, sixer:true }, { n:'IOI Sixer #417904', s:5400, sixer:true }, { n:'Sorrento (IOI)', s:4800, sixer:true }
+];
+function boardRows(){
+  const mine = (store('rpz_lb') || []).slice(0, 5).map(p => ({ n:p.n, s:p.s, me:true }));
+  return mine.concat(BOTS).slice(0, 10);
+}
+function drawLeaderboard(){
+  const c = $('lbCanvas'), x = c.getContext('2d'), W = c.width, H = c.height;
+  const bg = x.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#2a1d12'); bg.addColorStop(1,'#1a120a'); x.fillStyle = bg; x.fillRect(0,0,W,H);
+  x.strokeStyle = '#b9572b'; x.lineWidth = 6; x.strokeRect(8,8,W-16,H-16); x.strokeStyle = '#6b5238'; x.lineWidth = 2; x.strokeRect(20,20,W-40,H-40);
+  x.textAlign = 'center'; x.fillStyle = '#e1b04a'; x.font = 'bold 46px Georgia,serif'; x.fillText('HIGH SCORES', W/2, 78);
+  x.fillStyle = '#bfae90'; x.font = '22px "Courier New",monospace'; x.fillText('PARZIVAL & FRIENDS', W/2, 112);
+  const rows = boardRows(); x.font = 'bold 29px "Courier New",monospace';
+  rows.forEach((r,i)=>{ const y = 160 + i*38;
+    x.fillStyle = r.me ? '#e1b04a' : r.sixer ? '#d98a78' : (i<3 ? '#f3e8d2' : '#c4b08a');
+    x.textAlign = 'left'; x.fillText(String(i+1).padStart(2,'0') + '.', 70, y); x.fillText((r.me?'★ ':'') + r.n, 150, y);
+    x.textAlign = 'right'; x.fillText(String(r.s).padStart(6,'0'), W-70, y); });
+  const p = $('lbPlane'); if (p) { const m = p.getObject3D('mesh'); if (m && m.material && m.material.map) m.material.map.needsUpdate = true; }
+}
+function boardHTML(){
+  return '<table class="lb"><tr><th>#</th><th>PLAYER</th><th>SCORE</th></tr>' +
+    boardRows().map((r,i)=>`<tr class="${r.me?'me':''} ${r.sixer?'sixer':''}"><td>${i+1}</td><td>${r.me?'★ ':''}${esc(r.n)}</td><td>${String(r.s).padStart(6,'0')}</td></tr>`).join('') + '</table>';
+}
+function currentScore(){ return Math.max(0, 12000 - S.wrong * 250 - S.hints * 100); }
+
+/* =====================================================================
+   7.  HUD / TOASTS / BANNERS
+   ===================================================================== */
+let toastT = null;
+function toast(msg, ms){ const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), ms||3800); }
+function banner(a,b){ const el = $('banner'); el.querySelector('.b1').textContent = a; el.querySelector('.b2').textContent = b||''; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+function updateHud(){
+  const st = STAGES[S.stage];
+  $('rlevel').textContent = LEVELTITLE[st.level] + (st.kind==='question' ? '  ·  RIDDLE' : '');
+  $('rtext').textContent = st.riddle;
+  $('chips').innerHTML = CHIPS.map(c=>{ const done = S.solved.has(c[0]==='egg'?'egg':c[0]); const now = STAGES[S.stage].q===c[0] || (c[0]==='egg' && st.id==='egg');
+    return `<span class="pchip ${done?'done':''} ${now?'now':''}">${done?'✔ ':''}${c[1]}</span>`; }).join('');
+  $('keys').innerHTML = [['copper','#d2824a'],['jade','#9cbf72'],['crystal','#a9c8d8']].map(k=>
+    `<span class="key ${S.keys.includes(k[0])?'have':''}" style="color:${k[1]}">🗝 ${KEYNAME[k[0]].split(' ')[0]}</span>`).join('');
+}
+
+/* =====================================================================
+   8.  CONTROLS / INTERACTION
+   ===================================================================== */
+function setControls(on){
+  cam.setAttribute('look-controls','enabled', on); cam.setAttribute('wasd-controls','enabled', on);
+  try { const w = cam.components['wasd-controls']; if (!on && w && w.velocity) w.velocity.set(0,0,0); } catch(e){}
+}
+function canvasEl(){ return scene.canvas || document.querySelector('canvas.a-canvas'); }
+function lockMouse(){ try { const c = canvasEl(); if (c && c.requestPointerLock) { const p = c.requestPointerLock(); if (p && p.catch) p.catch(()=>{}); } } catch(e){} }
+function isLocked(){ return !!document.pointerLockElement; }
+
+function visibleChain(el){ for (let n = el; n && n !== scene; n = n.parentNode) { if (n.object3D && n.object3D.visible === false) return false; } return true; }
+function hoverTick(){
+  glowTick();
+  const pr = $('prompt'), ch = $('crosshair');
+  let found = null;
+  if (S.started && !S.modal && !S.busy && !S.won) {
+    const rc = cam.components.raycaster;
+    if (rc && rc.intersectedEls) for (const el of rc.intersectedEls) {
+      const g = el.closest && el.closest('[data-obj]');
+      if (g && visibleChain(g)) { found = g.getAttribute('data-obj'); break; }
+    }
+  }
+  S.hover = found; pr.classList.toggle('on', !!found); ch.classList.toggle('on', !!found);
+  if (found) pr.textContent = 'Examine  —  click / [E]';
+  $('lockhint').classList.toggle('hidden', !(S.started && !S.modal && !S.busy && !isLocked() && !S.won));
+}
+
+function interact(){
+  if (!S.started || S.modal || S.busy || S.won || !S.hover) return;
+  const id = S.hover, st = STAGES[S.stage], it = INTERACT[id];
+  if (id === st.target) {
+    if (st.kind === 'question') openQuestion(st);
+    else if (st.kind === 'teleport') { sfx.ok(); toast('The portal pulls you through…', 1800); goEnv(st.to, () => { S.stage++; updateHud(); }); }
+    else if (st.kind === 'victory') victory();
+  } else {
+    const prior = STAGES.findIndex(s => s.target === id);
+    toast(prior >= 0 && prior < S.stage ? 'You already solved this one. ✔' : it.msg);
+  }
+}
+
+/* ---------- environment switching ---------- */
+function setEnv(key){
+  Object.keys(GROUPS).forEach(k => GROUPS[k].setAttribute('visible', k === key));
+  const e = ENVS[key]; S.env = key; window.RPZ_BOUNDS = e.bounds;
+  cam.object3D.position.set(e.cx + e.spawn[0], 1.6, e.spawn[1]);
+  try { const lc = cam.components['look-controls']; lc.yawObject.rotation.y = 0; lc.pitchObject.rotation.x = 0; } catch(e2){}
+  try { const w = cam.components['wasd-controls']; if (w && w.velocity) w.velocity.set(0,0,0); } catch(e3){}
+  if (key === 'waste') scene.setAttribute('fog','type:exponential;color:#9a7450;density:0.03');
+  else if (key === 'ioi') scene.setAttribute('fog','type:exponential;color:#d5d9df;density:0.008');
+  else scene.removeAttribute('fog');
+}
+function goEnv(key, cb){
+  S.busy = true; $('fade').classList.add('on'); sfx.key();
+  setTimeout(() => { setEnv(key); if (cb) cb();
+    setTimeout(() => { $('fade').classList.remove('on'); S.busy = false; banner(ENVS[key].name, ENVS[key].sub); }, 500); }, 750);
+}
+
+/* =====================================================================
+   9.  QUESTION MODAL  (claim → 2-of-6 evidence → defend → reconsider)
+   ===================================================================== */
+function openQuestion(st){
+  const Q = QUESTIONS[st.q];
+  S.modal = { st:st, Q:Q, phase:'pick', claim:null, picked:[], tries:0, msg:'', msgClass:'' };
+  document.exitPointerLock && document.exitPointerLock();
+  setControls(false); $('qmodal').classList.remove('hidden'); $('prompt').classList.remove('on'); renderQ(); sfx.key();
+}
+function closeModal(relock){
+  S.modal = null; $('qmodal').classList.add('hidden'); setControls(true);
+  if (relock) setTimeout(lockMouse, 60);
+}
+function renderQ(){
+  const m = S.modal; if (!m) return; const Q = m.Q, st = m.st, panel = $('qpanel'), scroll = panel.scrollTop;
+  let h = `<div class="chips"><span class="chip lvl">${esc(LEVELTITLE[st.level].split(' · ')[0])} · ${esc(st.keyName)}</span><span class="chip">${esc(Q.kind)}</span><span class="chip lens">${esc(Q.label)}</span></div>
+    <h2 class="disp">${esc(Q.title)}</h2><p class="qtext">${esc(Q.question)}</p><div class="lensnote">${esc(Q.lensNote)}</div>`;
+
+  if (m.phase === 'pick') {
+    h += `<h3><span class="n">1</span>Choose ONE claim to defend</h3><div class="claims">` +
+      Q.claims.map((c,i)=>`<button class="claim ${m.claim===i?'sel':''}" data-claim="${i}"><b>${'ABC'[i]}</b><span>${esc(c.text)}</span></button>`).join('') + `</div>`;
+    if (m.claim !== null) {
+      const good = Q.claims[m.claim].ev;
+      h += `<h3><span class="n">2</span>Select the 2 pieces of evidence that logically prove <u>your</u> claim<em>(${m.picked.length}/2 chosen)</em></h3><div class="evs">` +
+        Q.evidence.map((e,i)=>`<button class="ev ${m.picked.includes(i)?'sel':''} ${debug&&good.includes(i)?'dbg':''}" data-ev="${i}"><span class="tick"></span><span>${esc(e)}</span></button>`).join('') + `</div>`;
+    }
+    h += `<div class="qmsg ${m.msgClass}" id="qmsg">${m.msg}</div>
+      <div class="row"><button class="btn ghost" data-act="leave">Step away</button>` +
+      (m.claim !== null ? `<button class="btn" data-act="submit" ${m.picked.length===2?'':'disabled'}>Submit evidence</button>` : '') + `</div>`;
+  } else {
+    const claim = Q.claims[m.claim], rival = Q.claims.filter((c,i)=>i!==m.claim);
+    h += `<div class="okbox"><b style="color:var(--green)">✔ Evidence accepted.</b> You defended <b>Claim ${'ABC'[m.claim]}</b>: ${esc(claim.text)}
+        ${claim.ev.map(i=>`<q>“${esc(Q.evidence[i])}”</q>`).join('')}</div>
+      <h3><span class="n">3</span>Defend it — the Writer's Move</h3>
+      <div class="frame">The author does not simply use <i>[technique]</i> to <i>[effect]</i>; instead, the author uses <i>[technique]</i> to reveal <i>[meaning]</i>, suggesting that <i>[insight about humanity]</i>.</div>
+      <textarea id="tDefend" placeholder="Write your own version of the sentence above, using the specific language from your evidence…">${esc(m.defend||'')}</textarea>
+      <div class="cnt" id="cDefend"></div>
+      <h3><span class="n">4</span>Reconsider — a competing interpretation</h3>
+      <p class="qtext" style="font-size:15px;margin:0 0 4px">A classmate argues: <i>“${esc(rival[0].text)}”</i><br>How does this competing reading <b>complicate, challenge, or deepen</b> your claim? Where might you be partly wrong?</p>
+      <textarea id="tRecon" placeholder="Acknowledge a contradiction, ambiguity, or limit in your own argument…">${esc(m.recon||'')}</textarea>
+      <div class="cnt" id="cRecon"></div>
+      <div class="row"><button class="btn" data-act="continue" disabled>Continue ▶</button></div>`;
+  }
+  $('qbody').innerHTML = h; panel.scrollTop = scroll;
+  if (m.phase === 'defend') { updateDefend(); }
+}
+const MIN_CHARS = 25;
+function updateDefend(){
+  const a = $('tDefend').value.trim().length, b = $('tRecon').value.trim().length;
+  $('cDefend').textContent = `${a}/${MIN_CHARS} characters minimum`; $('cRecon').textContent = `${b}/${MIN_CHARS} characters minimum`;
+  $('qbody').querySelector('[data-act="continue"]').disabled = !(a >= MIN_CHARS && b >= MIN_CHARS);
+}
+$('qbody').addEventListener('input', e => { if (e.target.id === 'tDefend' || e.target.id === 'tRecon') { S.modal.defend = $('tDefend').value; S.modal.recon = $('tRecon').value; updateDefend(); } });
+$('qbody').addEventListener('click', e => {
+  const m = S.modal; if (!m) return;
+  const cl = e.target.closest('[data-claim]'), ev = e.target.closest('[data-ev]'), ac = e.target.closest('[data-act]');
+  if (cl && m.phase === 'pick') { const i = +cl.dataset.claim; if (m.claim !== i) { m.claim = i; m.picked = []; m.msg = ''; m.msgClass = ''; } renderQ(); }
+  else if (ev && m.phase === 'pick') { const i = +ev.dataset.ev, k = m.picked.indexOf(i);
+    if (k >= 0) m.picked.splice(k,1); else { if (m.picked.length >= 2) m.picked.shift(); m.picked.push(i); } m.msg = ''; m.msgClass = ''; renderQ(); }
+  else if (ac) {
+    if (ac.dataset.act === 'leave') closeModal(true);
+    if (ac.dataset.act === 'submit') submitEvidence();
+    if (ac.dataset.act === 'continue') finishQuestion();
+  }
+});
+function submitEvidence(){
+  const m = S.modal, good = m.Q.claims[m.claim].ev.slice().sort().join(), mine = m.picked.slice().sort().join();
+  if (good === mine) { sfx.ok(); m.phase = 'defend'; renderQ(); $('qpanel').scrollTop = 0; }
+  else {
+    m.tries++; S.wrong++; sfx.bad();
+    m.msg = '✖ Not quite. Re-evaluate: which details actually <b>prove</b> your claim — not just mention the topic? You may change your evidence or switch to a different claim.' +
+      (m.tries >= 3 ? '<br><i>Hint: look for language that shows the author\'s <u>technique</u> at work (word choice, symbol, contrast), not just plot events.</i>' : '');
+    m.msgClass = 'bad'; renderQ(); const q = $('qmsg'); q.classList.add('shake'); setTimeout(()=>q && q.classList.remove('shake'), 450);
+  }
+}
+function finishQuestion(){
+  const m = S.modal, st = m.st, Q = m.Q, claim = Q.claims[m.claim];
+  S.journal.push({ title:Q.title, label:Q.label, question:Q.question, claim:claim.text, evidence:claim.ev.map(i=>Q.evidence[i]), defend:$('tDefend').value.trim(), recon:$('tRecon').value.trim() });
+  S.solved.add(st.q);
+  closeModal(false);
+  if (st.award) { S.keys.push(st.award); sfx.key(); toast('🗝 You earned the ' + KEYNAME[st.award] + '!', 4200); }
+  else toast('✔ ' + Q.label + ' gate opened!', 3500);
+  S.stage++;
+  if (st.after === 'toRoom') { setTimeout(() => goEnv('room', () => { spawnEgg(); updateHud(); }), 1200); }
+  updateHud();
+  if (!st.after) setTimeout(lockMouse, 80);
+}
+
+/* =====================================================================
+   10.  VICTORY
+   ===================================================================== */
+function journalText(){
+  let t = `READY PLAYER ZERO — Analysis Journal\nPlayer: ${S.name}\nScore: ${currentScore()}\n\n`;
+  S.journal.forEach((j,i)=>{ t += `${i+1}. ${j.title} (${j.label})\nQuestion: ${j.question}\nClaim: ${j.claim}\nEvidence:\n${j.evidence.map(e=>'  - '+e).join('\n')}\nMy defense (Writer's Move): ${j.defend}\nReconsideration: ${j.recon}\n\n`; });
+  return t;
+}
+function victory(){
+  S.won = true; S.solved.add('egg'); updateHud(); document.exitPointerLock && document.exitPointerLock(); setControls(false); sfx.key();
+  const score = currentScore(), lb = store('rpz_lb') || []; lb.unshift({ n:S.name, s:score }); store('rpz_lb', lb.slice(0, 20));
+  drawLeaderboard();
+  $('vsub').textContent = `${S.name} · Final score ${score} · ${S.wrong} evidence re-evaluation${S.wrong===1?'':'s'} · ${S.hints} hint${S.hints===1?'':'s'}`;
+  $('vtake').textContent = TAKEAWAY; $('vboard').innerHTML = boardHTML();
+  $('vjournal').innerHTML = S.journal.map(j=>`<details class="jr"><summary>${esc(j.title)}</summary>
+      <p><b>Claim:</b> ${esc(j.claim)}</p><p><b>Evidence:</b> ${j.evidence.map(esc).join(' &nbsp;|&nbsp; ')}</p>
+      <p><b>Defense:</b> ${esc(j.defend)}</p><p><b>Reconsideration:</b> ${esc(j.recon)}</p></details>`).join('');
+  $('hud').classList.add('hidden'); setTimeout(() => $('victory').classList.remove('hidden'), 700);
+}
+$('againBtn').addEventListener('click', () => location.reload());
+$('copyBtn').addEventListener('click', () => {
+  const t = journalText();
+  const done = () => { $('copyBtn').textContent = 'Copied ✔'; setTimeout(()=>$('copyBtn').textContent='Copy my analysis', 2000); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fb); else fb();
+  function fb(){ const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); done(); } catch(e){} a.remove(); }
+});
+
+/* =====================================================================
+   11.  START + INPUT WIRING
+   ===================================================================== */
+function startGame(){
+  S.name = ($('nameIn').value.trim() || 'Player Zero').slice(0, 18); store('rpz_name', S.name);
+  $('start').classList.add('hidden'); $('hud').classList.remove('hidden'); S.started = true; updateHud();
+  banner(ENVS.room.name, ENVS.room.sub); lockMouse(); toast('Read the riddle at the bottom of the screen, then explore!', 5200);
+}
+window.addEventListener('keydown', e => {
+  const tag = (e.target && e.target.tagName) || ''; if (tag === 'TEXTAREA' || tag === 'INPUT') { if (e.key === 'Enter' && tag === 'INPUT' && !$('start').classList.contains('hidden') && !$('startBtn').disabled) startGame(); return; }
+  if (e.code === 'KeyE') interact();
+  else if (e.code === 'KeyH' && S.started && !S.modal && !S.won) { S.hints++; toast('💡 Hint (−100 pts): ' + STAGES[S.stage].hint, 6500); }
+  else if (e.code === 'Escape' && S.modal && S.modal.phase === 'pick') closeModal(false);
+});
+window.addEventListener('mousedown', e => { if (e.button === 0 && e.target && e.target.tagName === 'CANVAS') interact(); });
+
+function init(){
+  buildRoom(); buildWaste(); buildIOI();
+  Object.keys(GROUPS).forEach(k => GROUPS[k].setAttribute('visible', k === 'room'));
+  setEnv('room'); drawLeaderboard();
+  setTimeout(drawLeaderboard, 600);
+  try { cam.components.raycaster.refreshObjects(); } catch(e){}
+  setInterval(hoverTick, 80);
+  $('nameIn').value = store('rpz_name') || '';
+  const b = $('startBtn'); b.disabled = false; b.textContent = 'ENTER THE OASIS'; b.addEventListener('click', startGame);
+}
+if (scene.hasLoaded) init(); else scene.addEventListener('loaded', init);
+})();
+</script>
+</body>
+</html>
