@@ -240,10 +240,19 @@
 window.RPZ_BOUNDS = [-6.4, 6.4, -6.4, 6.4];
 AFRAME.registerComponent('bounded', {
   tick: function () {
-    var b = window.RPZ_BOUNDS, p = this.el.object3D.position;
+    var b = window.RPZ_BOUNDS, p = this.el.object3D.position, R = 0.42;
     p.x = Math.min(b[1], Math.max(b[0], p.x));
     p.z = Math.min(b[3], Math.max(b[2], p.z));
     p.y = 1.6;
+    /* solid objects: push the player out of any collision box (smallest push wins) */
+    var C = window.RPZ_COLLIDERS;
+    if (C) for (var pass = 0; pass < 2; pass++) for (var i = 0; i < C.length; i++) {
+      var c = C[i];
+      if (p.x > c[0] - R && p.x < c[1] + R && p.z > c[2] - R && p.z < c[3] + R) {
+        var dl = p.x - (c[0] - R), dr = (c[1] + R) - p.x, dt = p.z - (c[2] - R), db = (c[3] + R) - p.z, m = Math.min(dl, dr, dt, db);
+        if (m === dl) p.x = c[0] - R; else if (m === dr) p.x = c[1] + R; else if (m === dt) p.z = c[2] - R; else p.z = c[3] + R;
+      }
+    }
   }
 });
 
@@ -1055,11 +1064,33 @@ function interact(){
   }
 }
 
+/* ---------- collision boxes: built once from the finished scene ---------- */
+const COLLIDERS = { room:[], waste:[], ioi:[] };
+function buildColliders(){
+  const T = AFRAME.THREE, bx = new T.Box3(), un = new T.Box3();
+  Object.keys(GROUPS).forEach(key => {
+    GROUPS[key].object3D.updateMatrixWorld(true); COLLIDERS[key] = [];
+    Array.from(GROUPS[key].children).forEach(ch => {
+      if (!ch.object3D || ch.tagName === 'A-SKY') return;
+      un.makeEmpty();
+      ch.object3D.traverse(o => {
+        if (!o.isMesh || !o.geometry || (o.el && o.el.tagName === 'A-TEXT')) return;
+        bx.setFromObject(o); const h = bx.max.y - bx.min.y;
+        if (h < 0.15 || bx.min.y > 1.8 || bx.max.y < 0.25) return;   /* skip flat floors, overhead beams, tiny trim */
+        un.union(bx);
+      });
+      if (un.isEmpty() || (un.max.x - un.min.x > 40 && un.max.z - un.min.z > 40)) return;
+      COLLIDERS[key].push([un.min.x, un.max.x, un.min.z, un.max.z]);
+    });
+  });
+  window.RPZ_COLLIDERS = COLLIDERS[S.env];
+}
+
 /* ---------- environment switching ---------- */
 function setEnv(key){
   Object.keys(GROUPS).forEach(k => GROUPS[k].setAttribute('visible', k === key));
   const ashEl = document.getElementById('ash'); if (ashEl) ashEl.setAttribute('visible', key === 'waste');
-  const e = ENVS[key]; S.env = key; window.RPZ_BOUNDS = e.bounds;
+  const e = ENVS[key]; S.env = key; window.RPZ_BOUNDS = e.bounds; window.RPZ_COLLIDERS = COLLIDERS[key];
   cam.object3D.position.set(e.cx + e.spawn[0], 1.6, e.spawn[1]);
   try { const lc = cam.components['look-controls']; lc.yawObject.rotation.y = 0; lc.pitchObject.rotation.x = 0; } catch(e2){}
   try { const w = cam.components['wasd-controls']; if (w && w.velocity) w.velocity.set(0,0,0); } catch(e3){}
@@ -1193,6 +1224,7 @@ $('copyBtn').addEventListener('click', () => {
    ===================================================================== */
 function startGame(){
   S.name = ($('nameIn').value.trim() || 'Player Zero').slice(0, 18); store('rpz_name', S.name);
+  buildColliders();
   $('start').classList.add('hidden'); $('hud').classList.remove('hidden'); S.started = true; updateHud();
   banner(ENVS.room.name, ENVS.room.sub); lockMouse(); toast('Read the riddle at the bottom of the screen, then explore!', 5200);
 }
