@@ -1097,6 +1097,7 @@ function setEnv(key){
   if (key === 'waste') scene.setAttribute('fog','type:exponential;color:#9a7450;density:0.03');
   else if (key === 'ioi') scene.setAttribute('fog','type:exponential;color:#d5d9df;density:0.008');
   else scene.removeAttribute('fog');
+  buildColliders();
 }
 function goEnv(key, cb){
   S.busy = true; $('fade').classList.add('on'); sfx.key();
@@ -1224,7 +1225,7 @@ $('copyBtn').addEventListener('click', () => {
    ===================================================================== */
 function startGame(){
   S.name = ($('nameIn').value.trim() || 'Player Zero').slice(0, 18); store('rpz_name', S.name);
-  buildColliders();
+  buildColliders(); [1200,3000,6000,12000,20000].forEach(ms => setTimeout(buildColliders, ms));   /* re-scan while slower laptops finish loading models */
   $('start').classList.add('hidden'); $('hud').classList.remove('hidden'); S.started = true; updateHud();
   banner(ENVS.room.name, ENVS.room.sub); lockMouse(); toast('Read the riddle at the bottom of the screen, then explore!', 5200);
 }
