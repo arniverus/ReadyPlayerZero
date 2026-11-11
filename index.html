@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <title>Ready Player Zero</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Ready Player Zero — an interactive 3D literary analysis game for Ernest Cline's Ready Player One.">
+<meta name="description" content="Ready Player Zero: an interactive 3D literary analysis game for Ernest Cline's Ready Player One.">
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
 <!--
   ======================================================================
-  READY PLAYER ZERO  —  single-file A-Frame game (no build step)
+  READY PLAYER ZERO: single-file A-Frame game (no build step)
   ----------------------------------------------------------------------
   HOST: put this file in a GitHub repo as index.html and enable Pages.
   CONTROLS: WASD move · mouse look (click the screen to lock the mouse)
@@ -17,9 +17,9 @@
   TEACHER TIP: add  ?debug  to the URL (index.html?debug) and the correct
             evidence cards glow green, so you can test every question fast.
   EDIT THE CONTENT: scroll to  "QUESTION BANK"  in the script. Every
-            question has: question text, 2–3 claims, 6 evidence strings,
+            question has: question text, 2 or 3 claims, 6 evidence strings,
             and for each claim  ev:[i,j]  = the TWO correct evidence
-            indexes (0–5) for that claim.
+            indexes (0 to 5) for that claim.
   ======================================================================
 -->
 
@@ -137,7 +137,7 @@
   #victory .panel{border-color:var(--yellow);box-shadow:0 8px 40px rgba(0,0,0,.7)}
   .egg{font-size:70px;text-align:center;filter:none;animation:bob 2s ease-in-out infinite}
   @keyframes bob{50%{transform:translateY(-8px)}}
-  .takeaway{background:rgba(143,183,168,.07);border:1px solid var(--cyan);border-radius:10px;padding:14px 18px;font-size:16.5px;line-height:1.6;margin:14px 0}
+  .takeaway .qt{font-family:Georgia,serif;font-size:clamp(22px,3vw,32px);line-height:1.4;text-align:center;font-style:italic}.takeaway .qby{text-align:center;margin-top:10px;color:var(--yellow);letter-spacing:.08em;text-transform:uppercase;font-size:14px}.takeaway{background:rgba(143,183,168,.07);border:1px solid var(--cyan);border-radius:10px;padding:14px 18px;font-size:16.5px;line-height:1.6;margin:14px 0}
   table.lb{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0}
   table.lb td,table.lb th{padding:6px 10px;border-bottom:1px solid #4d3b28;text-align:left}
   table.lb th{color:var(--cyan);font-size:12px;letter-spacing:.1em}
@@ -159,7 +159,7 @@
   <div class="panel">
     <h1 class="disp">READY PLAYER ZERO</h1>
     <div class="sub">An interactive literary-analysis quest through <i>Ready Player One</i></div>
-    <p class="guide"><b style="color:#fff">Guiding Question:</b> How does the author strategically employ literary elements, narrative choices, and perspective to construct meaning — and how does examining the text through different literary lenses complicate or deepen that meaning?</p>
+    <p class="guide"><b style="color:#fff">Guiding Question:</b> How does the author strategically employ literary elements, narrative choices, and perspective to construct meaning, and how does examining the text through different literary lenses complicate or deepen that meaning?</p>
     <div class="how">
       <div><b>1 · Solve the riddle.</b> Each riddle hints at an object hidden in the world. Find it and click it.</div>
       <div><b>2 · Choose a claim.</b> You'll see competing interpretations. Pick ONE you can defend.</div>
@@ -204,7 +204,7 @@
     <h1 class="disp">YOU FOUND THE EGG</h1>
     <div class="sub" id="vsub"></div>
     <div class="takeaway" id="vtake"></div>
-    <h3 class="disp" style="color:var(--cyan);font-size:15px">PARZIVAL &amp; FRIENDS — HIGH SCORES</h3>
+    <h3 class="disp" style="color:var(--cyan);font-size:15px">PARZIVAL &amp; FRIENDS · HIGH SCORES</h3>
     <div id="vboard"></div>
     <h3 class="disp" style="color:var(--cyan);font-size:15px;margin-top:16px">YOUR ANALYSIS JOURNAL</h3>
     <div id="vjournal"></div>
@@ -251,94 +251,133 @@ AFRAME.registerComponent('bounded', {
 'use strict';
 
 /* =====================================================================
-   1.  QUESTION BANK  (PLACEHOLDERS — replace with real content)
+   1.  QUESTION BANK  (edit here)
    ---------------------------------------------------------------------
    For every question:
-     label      – chip shown at the top (element or lens)
-     lensNote   – one-line reminder of what the element/lens means
-     question   – the literary question
-     claims     – 2 or 3 competing interpretations.  ev:[i,j] = indexes of the
-                  TWO evidence cards (0–5) that correctly support that claim.
-     evidence   – exactly 6 verbatim quotes / snippets (cite chapter!)
+     label      : chip shown at the top (element or lens)
+     lensNote   : one-line reminder of what the element/lens means
+     question   : the literary question
+     claims     : 2 or 3 competing interpretations.  ev:[i,j] = indexes of the
+                  TWO evidence cards (0 to 5) that correctly support that claim.
+     evidence   : exactly 6 verbatim quotes / snippets (cite chapter!)
    ===================================================================== */
-const PH = (code) => ['A','B','C','D','E','F'].map(l =>
-  `[PLACEHOLDER EVIDENCE ${code}-${l}] “Replace with a verbatim quote from the novel.” (Ch. __)`);
-
 const QUESTIONS = {
   setting: {
-    label: 'Setting', kind: 'Literary Element · Key',
-    title: 'The Copper Key — Setting',
-    lensNote: 'Setting: when, where, and under what conditions the story happens — and how those conditions shape characters and meaning.',
-    question: '[PLACEHOLDER QUESTION] How does Cline use the setting of the Stacks to shape the novel\'s meaning?',
+    label: "Setting", kind: "Literary Element · Key",
+    title: "The Copper Key: Setting",
+    lensNote: "Setting is when, where, and under what conditions a story happens, and how those conditions shape the characters and the meaning.",
+    question: "How does Cline use the setting of the Stacks to shape Wade’s choices and the novel’s meaning?",
     claims: [
-      { text: '[PLACEHOLDER CLAIM A] The setting traps characters in a cycle that makes escape into the OASIS feel necessary.', ev: [1, 4] },
-      { text: '[PLACEHOLDER CLAIM B] The setting critiques a society that has let inequality and neglect pile up.',            ev: [0, 5] },
-      { text: '[PLACEHOLDER CLAIM C] The setting shows that community and hope can survive even in decay.',                    ev: [2, 3] }
+      { text: "The Stacks make escaping into the OASIS feel less like a choice and more like survival, so the setting pushes Wade toward the virtual world.", ev: [0, 5] },
+      { text: "The Stacks expose a society that answered disaster by piling poor people on top of each other instead of fixing anything, so the setting works as a critique of neglect.", ev: [1, 3] },
+      { text: "Even in the Stacks, small moments of real human connection survive, which hints that real life still holds something worth saving.", ev: [2, 4] },
     ],
-    evidence: PH('SET')
+    evidence: [
+      "“Luckily, I had access to the OASIS, which was like having an escape hatch into a better reality. The OASIS kept me sane.” (Ch. 1, p. 26)",
+      "“The dark, narrow strips of ground between the stacks were clogged with the skeletons of abandoned cars and trucks, their gas tanks emptied and their exit routes blocked off long ago.” (Ch. 1, p. 29)",
+      "“I fixed her ancient OASIS console whenever it went on the fritz, and in return, she answered my endless questions about what it had been like for her to grow up during the 1980s.” (Ch. 1, p. 31)",
+      "“Real estate within walking distance of a big city became far too valuable to waste on a flat plane of mobile homes, so someone had cooked up the brilliant idea of, as Mr. Miller put it, ‘stacking the sumbitches,’ to maximize the use of ground space.” (Ch. 1, p. 29)",
+      "“My aunt Alice and her boyfriend Rick were dead, along with everyone who had lived in our trailer, and in the trailers below and around it. Including sweet old Mrs. Gilmore.” (Ch. 14, p. 155)",
+      "“It was a Pitfall rip-off called The Stacks where you had to navigate through a vertical maze of trailers” … “My game was a lot more fun than the real thing.” (Ch. 1, p. 30 to 31)",
+    ]
   },
   eco: {
-    label: 'Ecological Lens', kind: 'Literary Lens · Gate',
-    title: 'The Ecological Gate',
-    lensNote: 'Ecological lens: how the text portrays the relationship between humans and the natural/physical environment — and whose choices caused its condition.',
-    question: '[PLACEHOLDER QUESTION] Through an ecological lens, what does the novel suggest about humanity\'s relationship with the planet?',
+    label: "Ecological Lens", kind: "Literary Lens · Gate",
+    title: "The Ecological Gate",
+    lensNote: "The ecological lens looks at how a text shows the relationship between people and the natural world, and whose choices caused its condition.",
+    question: "Through an ecological lens, what does the novel suggest about the connection between humanity’s escape into the OASIS and the condition of the planet?",
     claims: [
-      { text: '[PLACEHOLDER CLAIM A] The novel warns that abandoning the real world helps accelerate its decay.',            ev: [0, 2] },
-      { text: '[PLACEHOLDER CLAIM B] The novel treats environmental collapse as a backdrop, not a problem anyone solves.',   ev: [3, 5] }
+      { text: "The novel warns that a virtual paradise makes it easy to give up on a real planet people damaged, so the OASIS becomes part of the problem.", ev: [0, 3] },
+      { text: "The novel suggests the planet can still be repaired, but only if people with power choose to turn their attention back to the real world.", ev: [2, 5] },
     ],
-    evidence: PH('ECO')
+    evidence: [
+      "“The skyrocketing cost of oil made airline and automobile travel too expensive for the average citizen, and the OASIS became the only getaway most people could afford.” … “Every day, more and more people had reason to seek solace inside Halliday and Morrow’s virtual utopia.” (Ch. 5, p. 67)",
+      "“My entire estate, including a controlling share of stock in my company, Gregarious Simulation Systems, is to be placed in escrow until such time as a single condition I have set forth in my will is met.” (Prologue, p. 13)",
+      "“If I win that dough, I’m going to make sure everyone on this planet has enough to eat. Once we tackle world hunger, then we can figure out how to fix the environment and solve the energy crisis.” (Ch. 9, p. 107)",
+      "“The reason so many people are starving is because we’ve wrecked the planet. The Earth is dying, you know? It’s time to leave.” (Ch. 9, p. 107)",
+      "“Decades ago, Zork and its sequels had all been licensed and re-created inside the OASIS as stunning three-dimensional immersive simulations all located on the planet Frobozz” (Ch. 23, p. 236)",
+      "“We’re going to use all of the moolah we just won to feed everyone on the planet. We’re going to make the world a better place, right?” (Ch. 39, p. 379)",
+    ]
   },
   conflict: {
-    label: 'Conflict', kind: 'Literary Element · Key',
-    title: 'The Jade Key — Conflict',
-    lensNote: 'Conflict: the struggle between opposing forces (person vs. person, society, self, technology) that drives plot and reveals values.',
-    question: '[PLACEHOLDER QUESTION] What does the conflict between the gunters and IOI reveal about the novel\'s larger meaning?',
+    label: "Conflict", kind: "Literary Element · Key",
+    title: "The Jade Key: Conflict",
+    lensNote: "Conflict is the struggle between opposing forces, like a person against a society or a company, that drives the plot and reveals what a story values.",
+    question: "What does the central conflict between the gunters and IOI reveal about the novel’s larger meaning?",
     claims: [
-      { text: '[PLACEHOLDER CLAIM A] It is a fight over who controls shared culture and imagination.',                          ev: [2, 4] },
-      { text: '[PLACEHOLDER CLAIM B] It is a personal test of Wade\'s values more than a battle against a company.',            ev: [0, 3] },
-      { text: '[PLACEHOLDER CLAIM C] It shows that fighting a powerful system requires collaboration, not lone heroics.',       ev: [1, 5] }
+      { text: "The conflict is a fight over who gets to own a shared world, because IOI wants to turn a free space into a product.", ev: [0, 3] },
+      { text: "The conflict turns deadly in the real world, which shows that power inside the virtual world reaches into the physical one.", ev: [1, 5] },
+      { text: "The conflict is won through cooperation, not lone heroism, which challenges the idea that one special hero saves everyone.", ev: [2, 4] },
     ],
-    evidence: PH('CON')
+    evidence: [
+      "“They would start charging a monthly fee for access to the simulation. They would plaster advertisements on every visible surface. User anonymity and free speech would become things of the past.” (Ch. 2, p. 41)",
+      "“The Sixers had just tried to kill me.” … “My aunt Alice and her boyfriend Rick were dead, along with everyone who had lived in our trailer, and in the trailers below and around it.” (Ch. 14, p. 155)",
+      "“If gunters around the world don’t join forces to stop the Sixers, they will reach the egg and win the contest. And then the OASIS will fall under IOI’s imperialist rule.” (Ch. 32, p. 318)",
+      "“No, I thought. You’re going to turn it into a fascist corporate theme park where the few people who can still afford the price of admission no longer have an ounce of freedom.” (Ch. 14, p. 149)",
+      "“But I couldn’t have done it without you guys.” (Ch. 38, p. 373)",
+      "“It seemed that the Sixers had also planted a large amount of drug-manufacturing equipment and chemicals at the scene, to make it look like a meth lab in one of the trailers had exploded. It worked like a charm. The cops didn’t bother to investigate any further.” (Ch. 16, p. 171)",
+    ]
   },
   marx: {
-    label: 'Marxist Lens', kind: 'Literary Lens · Gate',
-    title: 'The Marxist Gate',
-    lensNote: 'Marxist lens: how the text represents class, labor, ownership, and power — and whose interests the story\'s world serves.',
-    question: '[PLACEHOLDER QUESTION] Through a Marxist lens, what does the novel suggest about class and corporate power?',
+    label: "Marxist Lens", kind: "Literary Lens · Gate",
+    title: "The Marxist Gate",
+    lensNote: "The Marxist lens looks at how a text shows class, labor, money, and ownership, and whose interests its world serves.",
+    question: "Through a Marxist lens, what does the novel reveal about class, debt, and corporate power?",
     claims: [
-      { text: '[PLACEHOLDER CLAIM A] IOI exposes how wealth turns people\'s labor and debt into control.',                                  ev: [1, 3] },
-      { text: '[PLACEHOLDER CLAIM B] The novel criticizes corporations while still celebrating a hero who wins a fortune.',                 ev: [0, 4] },
-      { text: '[PLACEHOLDER CLAIM C] The OASIS offers equality in theory but still reflects the same class divisions as reality.',           ev: [2, 5] }
+      { text: "IOI’s indenture system shows how a corporation can turn poor people’s debt into lifelong control over their labor.", ev: [1, 3] },
+      { text: "The novel criticizes corporate greed, yet it still rewards its hero by making him a billionaire, so it never fully gives up the dream of personal wealth.", ev: [0, 4] },
+      { text: "Even inside the supposedly equal OASIS, money still decides who can go where, so the virtual world copies real class divisions.", ev: [2, 5] },
     ],
-    evidence: PH('MRX')
+    evidence: [
+      "“And my credit readout now displayed a number twelve digits long. I was a multibillionaire.” (Ch. 38, p. 371)",
+      "“Once they got finished slapping you with pay deductions, late fees, and interest penalties, you wound up owing them more each month, instead of less. Once you made the mistake of getting yourself indentured, you would probably remain indentured for life.” (Ch. 29, p. 286)",
+      "“If you wanted to go somewhere more interesting, you had to pay a teleportation fare to get there, and that cost money, something I didn’t have. So my avatar was stranded on Incipio.” (Ch. 2, p. 39)",
+      "“Under current federal law, you are now eligible for mandatory indenturement. You will remain indentured until you have paid your debt to our company in full, along with all applicable interest, processing and late fees, and any other charges or penalties that you incur henceforth.” (Ch. 28, p. 278)",
+      "“IOI can afford to hire the best lawyers in the world.” … “But now so can we.” (Ch. 38, p. 375 to 376)",
+      "“They were really just giant spaceship-sized teleporters, but since they charged by the mass of your ship and the distance you wanted to travel, they were normally used only by corporations or extremely wealthy avatars with credits to burn.” (Ch. 21, p. 224)",
+    ]
   },
   symbols: {
-    label: 'Symbols & Diction', kind: 'Literary Technique · Key',
-    title: 'The Crystal Key — Symbols & Diction',
-    lensNote: 'Symbols & diction: objects that stand for bigger ideas, and the specific word choices that shape tone and meaning.',
-    question: '[PLACEHOLDER QUESTION] How do Halliday\'s journal and 1980s pop-culture references (symbols and diction) develop the novel\'s meaning?',
+    label: "Symbols & Diction", kind: "Literary Technique · Key",
+    title: "The Crystal Key: Symbols and Diction",
+    lensNote: "Symbols are objects that stand for bigger ideas. Diction is the specific word choices an author makes to shape tone and meaning.",
+    question: "How does Cline use symbols (like Halliday’s journal) and specific word choices to develop the novel’s meaning?",
     claims: [
-      { text: '[PLACEHOLDER CLAIM A] The references symbolize nostalgia as both a source of connection and a way to avoid the present.',  ev: [0, 3] },
-      { text: '[PLACEHOLDER CLAIM B] The word choices around the Hunt turn culture into a commodity to be won.',                         ev: [2, 5] }
+      { text: "Halliday’s relics symbolize nostalgia as a hiding place. His love of old games started as a way to escape pain, and that habit shapes the entire Hunt.", ev: [0, 3] },
+      { text: "The language of the Hunt treats culture as something to be studied, owned, and won, more like a test or a product than something people simply enjoy.", ev: [2, 5] },
     ],
-    evidence: PH('SYM')
+    evidence: [
+      "“For one quarter, Black Tiger lets me escape from my rotten existence for three glorious hours. Pretty good deal.” (Ch. 27, p. 263)",
+      "“First, I replaced the flimsy door with a new airtight armor-plated vacuum-sealed WarDoor.” … “I ordered it online, and someone brought it right to my door.” (Ch. 19, p. 199)",
+      "“IOI had created a new department within the company that they called their ‘Oology Division.’” … “IOI required its egg hunters, which it referred to as ‘oologists,’ to use their employee numbers as their OASIS avatar names.” (Ch. 2, p. 41)",
+      "“The Almanac was over a thousand pages long, but it contained few details about Halliday’s personal life or his day-to-day activities.” … “Most of the entries were his stream-of-consciousness observations on various classic videogames, science-fiction and fantasy novels, movies, comic books, and ’80s pop culture” (Prologue, p. 16)",
+      "“I’d programmed mine to look, sound, and behave like Max Headroom, the (ostensibly) computer-generated star of a late-’80s talk show” … “Max was programmed to speak with a slight electronic stutter.” (Ch. 19, p. 203)",
+      "“I spent three months studying every John Hughes teen movie and memorizing all the key lines of dialogue.” (Ch. 6, p. 70)",
+    ]
   },
   moral: {
-    label: 'Moral / Philosophical Lens', kind: 'Literary Lens · Gate',
-    title: 'The Crystal Gate — Moral Lens',
-    lensNote: 'Moral/philosophical lens: what the text suggests about right and wrong, a good life, and what people owe one another.',
-    question: '[PLACEHOLDER QUESTION] Through a moral/philosophical lens, what does the novel suggest about how a person should live — in a virtual world or in reality?',
+    label: "Moral / Philosophical Lens", kind: "Literary Lens · Gate",
+    title: "The Crystal Gate: Moral Lens",
+    lensNote: "The moral and philosophical lens looks at what a text suggests about right and wrong, what makes a good life, and what people owe each other.",
+    question: "Through a moral and philosophical lens, what does the novel suggest about how a person should live: in a virtual world or in reality?",
     claims: [
-      { text: '[PLACEHOLDER CLAIM A] A meaningful life requires real human connection, even when reality is painful.',                    ev: [0, 5] },
-      { text: '[PLACEHOLDER CLAIM B] The novel suggests that escapism is not wrong in itself — it becomes harmful when it replaces action.', ev: [1, 3] },
-      { text: '[PLACEHOLDER CLAIM C] The ending is ambiguous: Wade wins by the rules of the game but questions whether the game is worth it.', ev: [2, 4] }
+      { text: "A meaningful life requires facing reality and real human connection, even when reality hurts.", ev: [0, 5] },
+      { text: "The novel does not condemn the OASIS itself. It shows the virtual world giving real gifts, like an education and a childhood, to people that reality failed.", ev: [1, 3] },
+      { text: "The ending is ambiguous. Wade is warned not to hide in the OASIS, yet he is handed total control over it, including the power to erase it.", ev: [2, 4] },
     ],
-    evidence: PH('MOR')
-  }
+    evidence: [
+      "“That was when I realized, as terrifying and painful as reality can be, it’s also the only place where you can find true happiness. Because reality is real.” … “Don’t make the same mistake I did. Don’t hide in here forever.” (Ch. 38, p. 372)",
+      "“From that moment on, I was more or less raised by the OASIS’s interactive educational programs, which any kid could access for free.” (Ch. 1, p. 23)",
+      "“It will shut down the OASIS forever.” … “I trust your judgment.” (Ch. 38, p. 372)",
+      "“Now, instead of running a gauntlet of bullies and drug addicts on my walk to school each morning, I went straight to my hideout and stayed there all day.” … “In here, I was safe.” (Ch. 2, p. 40)",
+      "“Using my avatar’s new superuser interface, I made a sweeping gesture with my hand, selecting all of the Sixer avatars on my display.” … “All eighteen Sixer avatars instantly dropped dead.” (Ch. 38, p. 374)",
+      "“It occurred to me then that for the first time in as long as I could remember, I had absolutely no desire to log back into the OASIS.” (Ch. 39, p. 380)",
+    ]
+  },
 };
 
 /* =====================================================================
-   2.  STAGES — the whole game flow in order
+   2.  STAGES, the whole game flow in order
    ===================================================================== */
 const KEYNAME = { copper: 'Copper Key', jade: 'Jade Key', crystal: 'Crystal Key' };
 const LEVELTITLE = {
@@ -349,31 +388,31 @@ const LEVELTITLE = {
 };
 const STAGES = [
   { id:'key1', level:1, env:'room', target:'stacks-model', kind:'question', q:'setting', award:'copper', keyName:'Copper Key',
-    riddle:'Among the miniatures a lonely genius left on his hobby table, one is no car, no castle, no rocket.\nIt is a neighborhood of mismatched homes piled on top of one another — a place a boy calls home though it was built to be left.\nFind the setting, shrunk down to fit a tabletop.',
-    hint:'A long table of tiny models sits in the north-west part of the room.' },
+    riddle:"On Halliday's hobby table, four tiny models wait.\nOne drives, one flies, and one guards a gate.\nThe last is homes on top of homes, piled up toward the sky.\nFind the place where Wade began. That's where the key will lie.",
+    hint:'A long table of tiny models sits in the northwest part of the room.' },
   { id:'gate1', level:1, env:'room', target:'portal-room', kind:'teleport', to:'waste', keyName:'Copper Key',
-    riddle:'The Copper Key fits no ordinary lock. Three doors line the east wall. Two have brass knobs, because they lead to ordinary closets.\nFind the one door that cannot be opened by hand — and listen for it to answer the key.',
+    riddle:"Three doors stand along the east wall, and two of them are boring.\nThey've got knobs, they hold old junk, they're not worth exploring.\nThe third one has no knob at all, nothing for your hand.\nWalk up close with your Copper Key and it will understand.",
     hint:'Face the east wall, toward the south end. Look for the plain door with no knob.' },
   { id:'eco', level:1, env:'waste', target:'eco-gate', kind:'question', q:'eco', keyName:'Copper Key',
-    riddle:'Welcome to the world outside. Many frames stand in this wasteland — pipes, goalposts, fallen towers — and every one is dead at the foot.\nSeek the one arch with something still alive growing beneath it. That is the gate that asks what humanity has done to its home.',
-    hint:'It is far to the north-east. The haze hides things, so get close to each frame and look at its base.' },
+    riddle:"Welcome to the world outside, where nothing ever grows.\nRusted frames stand all around with dead dirt at their toes.\nBut one old arch, way past the towers, kept a tiny sprout alive.\nFind the one green thing still standing. That's where the gate survives.",
+    hint:'It is far to the northeast. The haze hides things, so get close to each frame and look at its base.' },
   { id:'key2', level:2, env:'waste', target:'ioi-badge', kind:'question', q:'conflict', award:'jade', keyName:'Jade Key',
-    riddle:'I carry no sword, yet I can bind a life for years. My logo is bright as a promise and sharp as a debt.\nI do not float or glow. I lie in a sheltered gap between the towers on the western side, among the odds and ends scavengers left behind.\nFind the token of a war between a lone gunter and a company that wants everything.',
+    riddle:"I don't carry a sword, but I can tie up your life for years.\nMy logo looks like a promise, and my fine print ends in tears.\nI'm not floating and I'm not glowing. I'm just sitting on a crate\nin a gap between the western towers. Come find me before it's late.",
     hint:'Search the west side of the wasteland. The gap in the towers opens toward the east.' },
   { id:'gate2', level:2, env:'waste', target:'portal-waste', kind:'teleport', to:'ioi', keyName:'Jade Key',
-    riddle:'The Jade Key shivers. Every hoop in this wasteland is hollow, showing only the same dead sky.\nFind the one ring whose center is filled — a dark disc the color of a banked fire — in the far north-west corner, where the towers crowd close.',
-    hint:'Go to the far north-west corner. Check every ring you pass: only one is filled in.' },
+    riddle:"The Jade Key's getting restless. There's a ring you need to find.\nEvery hoop out here is empty, with dead sky showing behind.\nOnly one is filled in dark, like coals that never cooled.\nIt's waiting in the far northwest, so don't let the others fool you.",
+    hint:'Go to the far northwest corner. Check every ring you pass, because only one is filled in.' },
   { id:'marx', level:2, env:'ioi', target:'marx-gate', kind:'question', q:'marx', keyName:'Jade Key',
-    riddle:'You stand in the house of the Sixers, where everything is counted and nothing is free.\nFive round steel doors line the north wall: air, archives, payroll, maintenance... and one whose label means to take back what was lent.\nThat is the gate that asks who owns the game, and who is owned by it.',
+    riddle:"Welcome to IOI, where every person has a price.\nFive round doors line the north wall, and none of them look nice.\nAir, archives, payroll, maintenance: those four won't let you through.\nFind the one that takes back what it lent. That door is meant for you.",
     hint:'Walk to the far north wall and read the label on each round door.' },
   { id:'key3', level:3, env:'ioi', target:'journal', kind:'question', q:'symbols', award:'crystal', keyName:'Crystal Key',
-    riddle:'Magnetic ribbons and scribbled pages — a dead man\'s mixtapes and the words he chose.\nIOI keeps a gallery of "acquired culture" under glass along the west wall. Five cases, five relics. Only one holds both tapes and a handwritten book.',
+    riddle:"IOI buys up the past and locks it behind glass.\nFive cases line the west wall, full of things they've amassed.\nOnly one holds cassette tapes beside a dead man's handwritten book.\nRead the riddle, then read the cases. Take a careful look.",
     hint:'The museum gallery is along the west wall, toward the north end of the hall.' },
   { id:'moral', level:3, env:'ioi', target:'crystal-gate', kind:'question', q:'moral', after:'toRoom', keyName:'Crystal Key',
-    riddle:'The last gate is made of nothing that rusts. In a row of dull gray data crystals, each wearing a red IOI tag, one is clear as a conscience and belongs to no one.\nIt asks what a good life is worth — and where it should be lived.',
+    riddle:"The last gate isn't made of steel, and it isn't made of rust.\nIn a row of gray data crystals, each one wears a tag you shouldn't trust.\nOne is clear as glass and wears no tag at all.\nIt belongs to nobody. It's been waiting for your call.",
     hint:'The row of data crystals is along the east side of the hall, toward the north end.' },
   { id:'egg', level:4, env:'room', target:'egg', kind:'victory', keyName:'',
-    riddle:'Something golden has appeared where the pedestal waited.\nHalliday\'s room has one thing left to give you.\nTake the Egg.',
+    riddle:"The empty pedestal isn't empty anymore.\nSomething golden's waiting in the middle of the floor.\nYou found the keys, you passed the gates, you made it back to start.\nGo take the egg. You earned it.",
     hint:'The Easter Egg is in the center of the room.' }
 ];
 
@@ -381,11 +420,8 @@ const CHIPS = [
   ['setting','Setting'],['eco','Ecological'],['conflict','Conflict'],['marx','Marxist'],['symbols','Symbols'],['moral','Moral'],['egg','Egg']
 ];
 
-const TAKEAWAY =
-  'Halliday built the OASIS as an escape, yet his final test sends the winner back out of it. ' +
-  'The author does not simply use a virtual treasure hunt to entertain; instead, the author uses the quest to reveal that ' +
-  'meaning cannot be won inside a game, suggesting that — however painful reality may be — it is the only place where ' +
-  'real connection and real happiness exist. Now log out, and go be a person someone can find.';
+const TAKEAWAY = 'I’m not crazy about reality, but it’s still the only place to get a decent meal.';
+const TAKEAWAY_BY = 'Groucho Marx';
 
 /* =====================================================================
    3.  STATE
@@ -475,83 +511,199 @@ const ENVS = {
 };
 const GROUPS = {};
 const STACKPAL = ['#b5552f','#5b86a3','#c9a13b','#6f8f58','#8b5a8f','#b86a73','#7d838c'];
+const TX = {};
+function tx(name, w, h, fn){ return TX[name] || (TX[name] = texture(w, h, fn)); }
+function tmat(e, url, o){ e.setAttribute('material', Object.assign({ src:url, roughness:0.9, metalness:0.05 }, o || {})); return e; }
+function tbox(p, pos, s, url, o){ const e = mk(p,'a-box',{ position:pos.join(' '), width:s[0], height:s[1], depth:s[2] }); if (o && o.rot) e.setAttribute('rotation', o.rot.join(' ')); return tmat(e, url, o && o.m); }
+function tplane(p, pos, w, h, url, o){ const e = mk(p,'a-plane',{ position:pos.join(' '), width:w, height:h }); if (o && o.rot) e.setAttribute('rotation', o.rot.join(' ')); return tmat(e, url, o && o.m); }
 
-/* ---------- ENVIRONMENT 1 : HALLIDAY'S ROOM (1980s, wood paneling + shag carpet) ---------- */
+/* ---------- shared canvas art ---------- */
+function posterTex(i){
+  const P = [
+    { t:'THE LAST ARCADE', a:'#1b1f4a', b:'#e07a2f', k:'sun' }, { t:'DUNGEON MASTER', a:'#2a1235', b:'#c9a24a', k:'castle' },
+    { t:'SPACE PATROL', a:'#0d2238', b:'#4aa3c9', k:'planet' }, { t:'HACKER SUMMER', a:'#1d2b1a', b:'#9bd06a', k:'grid' },
+    { t:'ROBOT ROMEO', a:'#3a1a1a', b:'#e0605a', k:'robot' }, { t:'QUEST FOR THE EGG', a:'#2b2410', b:'#e1b04a', k:'egg' } ][i % 6];
+  return tx('poster'+(i%6), 256, 360, (c,w,h)=>{
+    const g = c.createLinearGradient(0,0,0,h); g.addColorStop(0,P.a); g.addColorStop(1,P.b); c.fillStyle = g; c.fillRect(0,0,w,h);
+    c.fillStyle = 'rgba(255,255,255,.9)'; c.strokeStyle = '#f3e8d2'; c.lineWidth = 6; c.strokeRect(5,5,w-10,h-10);
+    if (P.k==='sun'){ c.fillStyle='#ffd27a'; c.beginPath(); c.arc(w/2,170,70,0,7); c.fill(); c.fillStyle='#2a1235'; for(let y=190;y<240;y+=10) c.fillRect(w/2-80,y,160,4); c.fillStyle='#14102a'; c.fillRect(30,240,196,60); }
+    if (P.k==='castle'){ c.fillStyle='#120a1c'; c.fillRect(60,170,140,110); [[60,130],[110,110],[170,130]].forEach(t=>{ c.fillRect(t[0],t[1],30,60); c.beginPath(); c.moveTo(t[0]-4,t[1]); c.lineTo(t[0]+15,t[1]-30); c.lineTo(t[0]+34,t[1]); c.fill(); }); c.fillStyle='#ffd27a'; c.fillRect(120,230,16,50); }
+    if (P.k==='planet'){ c.fillStyle='#f3e8d2'; c.beginPath(); c.arc(w/2,170,60,0,7); c.fill(); c.strokeStyle='#0d2238'; c.lineWidth=10; c.beginPath(); c.ellipse(w/2,170,100,22,-0.3,0,7); c.stroke(); for(let i=0;i<40;i++){ c.fillStyle='#fff'; c.fillRect(Math.random()*w,Math.random()*120+20,2,2); } }
+    if (P.k==='grid'){ c.strokeStyle='#d6f5a8'; c.lineWidth=2; for(let x=20;x<w;x+=24){ c.beginPath(); c.moveTo(w/2,150); c.lineTo(x*1.0+(x-w/2)*2,330); c.stroke(); } for(let y=170;y<330;y+=20){ c.beginPath(); c.moveTo(0,y); c.lineTo(w,y); c.stroke(); } }
+    if (P.k==='robot'){ c.fillStyle='#e8e0d0'; c.fillRect(90,110,80,70); c.fillRect(100,185,60,70); c.fillStyle='#e0605a'; c.fillRect(105,135,20,14); c.fillRect(135,135,20,14); c.fillRect(120,160,20,6); c.fillRect(125,95,10,16); }
+    if (P.k==='egg'){ c.fillStyle='#ffe08a'; c.beginPath(); c.ellipse(w/2,175,52,70,0,0,7); c.fill(); c.fillStyle='rgba(255,255,255,.55)'; c.beginPath(); c.ellipse(w/2-18,150,12,24,0.3,0,7); c.fill(); }
+    c.textAlign='center'; c.font='bold 26px Georgia,serif'; c.fillStyle='#f3e8d2'; c.strokeStyle='rgba(0,0,0,.7)'; c.lineWidth=4;
+    const words = P.t.split(' '); words.forEach((wd,k)=>{ const y=h-70+k*28-(words.length-2)*14; c.strokeText(wd,w/2,y); c.fillText(wd,w/2,y); }); });
+}
+function crtTex(){ return tx('crt',128,96,(c,w,h)=>{ c.fillStyle='#04120a'; c.fillRect(0,0,w,h); c.fillStyle='#7dff9a';
+  const inv=['00100000100','00010001000','00111111100','01101110110','11111111111','10111111101','10100000101','00011011000'];
+  for(let r=0;r<3;r++) for(let k=0;k<5;k++) inv.forEach((row,y)=>{ for(let x=0;x<11;x++) if(row[x]==='1') c.fillRect(8+k*24+x*2, 8+r*20+y*2, 2, 2); });
+  c.fillRect(56,84,16,4); c.fillRect(62,80,4,4); c.fillStyle='rgba(0,0,0,.25)'; for(let y=0;y<h;y+=3) c.fillRect(0,y,w,1); }); }
+function windowTex(){ return tx('win',256,256,(c,w,h)=>{ const g=c.createLinearGradient(0,0,0,h); g.addColorStop(0,'#2c2a5a'); g.addColorStop(0.55,'#c9684a'); g.addColorStop(1,'#f0b26a'); c.fillStyle=g; c.fillRect(0,0,w,h);
+  c.fillStyle='#fff'; for(let i=0;i<30;i++) c.fillRect(Math.random()*w,Math.random()*100,1.5,1.5);
+  c.fillStyle='#1a1424'; for(let x=0;x<w;x+=46){ const bh=50+Math.random()*40; c.fillRect(x,h-bh-30,40,bh+30); c.beginPath(); c.moveTo(x-4,h-bh-30); c.lineTo(x+20,h-bh-62); c.lineTo(x+44,h-bh-30); c.fill(); c.fillStyle='#ffd27a'; c.fillRect(x+10,h-bh-8,8,10); c.fillStyle='#1a1424'; }
+  c.fillStyle='#0e0a14'; c.fillRect(0,h-26,w,26); c.fillStyle='#2a3a22'; [30,110,190].forEach(x=>{ c.beginPath(); c.arc(x,h-46,22,0,7); c.fill(); }); }); }
+function trailerTex(v){
+  const base=['#8a5a3a','#5f7a8a','#9a8a52','#6f7f5c'][v%4];
+  return tx('trailer'+(v%4), 256, 128, (c,w,h)=>{ const r=rngMaker(40+v); c.fillStyle=base; c.fillRect(0,0,w,h);
+    for(let x=0;x<w;x+=8){ c.fillStyle='rgba(0,0,0,.16)'; c.fillRect(x,0,2,h); }
+    for(let i=0;i<24;i++){ c.fillStyle=`rgba(${90+r()*50},${40+r()*20},20,${.12+r()*.18})`; c.fillRect(r()*w,0,6+r()*12,30+r()*98); }
+    c.fillStyle='#e8dcc0'; c.fillRect(0,h*0.62,w,6);
+    const lit = v%2===0; c.fillStyle='#2a2018'; c.fillRect(30,26,60,44); c.fillStyle= lit?'#ffcf6a':'#10161c'; c.fillRect(34,30,52,36); c.fillStyle='rgba(255,255,255,.18)'; c.fillRect(34,30,26,36);
+    c.fillStyle='#3a2a1e'; c.fillRect(118,22,44,100); c.fillStyle='#d9c27a'; c.beginPath(); c.arc(126,76,3,0,7); c.fill();
+    c.fillStyle='#cfd3d6'; c.fillRect(184,34,50,34); c.fillStyle='#4a4f54'; for(let y=38;y<66;y+=5) c.fillRect(188,y,42,2);
+    c.fillStyle='rgba(0,0,0,.3)'; c.fillRect(0,h-6,w,6); });
+}
+function containerTex(col){ return tx('cont'+col, 256, 96, (c,w,h)=>{ c.fillStyle=col; c.fillRect(0,0,w,h); for(let x=0;x<w;x+=10){ c.fillStyle='rgba(0,0,0,.2)'; c.fillRect(x,6,3,h-12); } c.fillStyle='rgba(255,255,255,.75)'; c.font='bold 16px monospace'; c.fillText('CX-'+(col.charCodeAt(2)*7%900+100),14,22);
+  c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(0,0,w,5); c.fillRect(0,h-5,w,5); for(let i=0;i<14;i++){ c.fillStyle='rgba(120,60,20,.25)'; c.fillRect(Math.random()*w,Math.random()*h,10+Math.random()*30,4); } }); }
+function skylineTex(){ return tx('sky',1024,256,(c,w,h)=>{ const g=c.createLinearGradient(0,0,0,h); g.addColorStop(0,'#9ec3e6'); g.addColorStop(1,'#eef3f8'); c.fillStyle=g; c.fillRect(0,0,w,h); const r=rngMaker(9);
+  for(let layer=0;layer<3;layer++){ const col=['#c6d3e0','#a2b3c6','#7b8da3'][layer]; for(let x=0;x<w;x+=18+r()*26){ const bw=22+r()*40, bh=50+r()*(100+layer*40); c.fillStyle=col; c.fillRect(x,h-bh,bw,bh);
+    if(layer===2){ c.fillStyle='rgba(255,255,255,.35)'; for(let wy=h-bh+6;wy<h-6;wy+=9) for(let wx=x+4;wx<x+bw-4;wx+=8) if(r()>0.35) c.fillRect(wx,wy,4,5); } } }
+  c.fillStyle='#e8edf2'; c.fillRect(0,h-6,w,6); }); }
+function marbleTex(){ return tx('marble',256,256,(c,w,h)=>{ c.fillStyle='#e9e6e1'; c.fillRect(0,0,w,h); const r=rngMaker(5); c.lineWidth=1;
+  for(let i=0;i<14;i++){ c.strokeStyle=`rgba(120,125,135,${.1+r()*.18})`; c.beginPath(); c.moveTo(r()*w,0); c.bezierCurveTo(r()*w,h*0.3,r()*w,h*0.6,r()*w,h); c.stroke(); }
+  c.strokeStyle='rgba(90,95,105,.45)'; c.lineWidth=3; c.strokeRect(1,1,w-2,h-2); }); }
+function logoTex(){ return tx('logo',512,512,(c,w,h)=>{ c.clearRect(0,0,w,h); c.fillStyle='#a8322e'; c.beginPath(); c.arc(w/2,h/2,230,0,7); c.fill(); c.fillStyle='#f4f1ec'; c.beginPath(); c.arc(w/2,h/2,200,0,7); c.fill();
+  c.fillStyle='#a8322e'; c.font='bold 190px Georgia,serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('IOI',w/2,h/2-10); c.font='bold 26px Georgia,serif'; c.fillText('INNOVATIVE ONLINE INDUSTRIES',w/2,h/2+120); }); }
+function screenTex(i){ return tx('scr'+(i%3),128,96,(c,w,h)=>{ c.fillStyle='#0c1a2e'; c.fillRect(0,0,w,h); const r=rngMaker(70+i); c.fillStyle='#2f6fa8'; c.fillRect(0,0,w,10);
+  for(let k=0;k<7;k++){ c.fillStyle=['#7fd0ff','#e8edf2','#e0a050'][k%3]; c.fillRect(8,18+k*10,20+r()*70,4); }
+  c.fillStyle='#4aa36a'; for(let k=0;k<8;k++) c.fillRect(90+k*4,80-r()*40,3,r()*40+4); }); }
+function bannerTex(){ return tx('banner',128,320,(c,w,h)=>{ c.fillStyle='#a8322e'; c.fillRect(0,0,w,h); c.fillStyle='#f4f1ec'; c.font='bold 54px Georgia,serif'; c.textAlign='center'; c.fillText('IOI',w/2,80);
+  c.font='bold 15px Georgia,serif'; ['YOUR','FUTURE','IS OUR','PROPERTY'].forEach((t,i)=>c.fillText(t,w/2,150+i*24)); c.fillRect(20,270,88,4); }); }
+function chainTex(){ return tx('chain',128,64,(c,w,h)=>{ c.clearRect(0,0,w,h); c.strokeStyle='rgba(150,150,145,.9)'; c.lineWidth=2; for(let k=-h;k<w;k+=14){ c.beginPath(); c.moveTo(k,0); c.lineTo(k+h,h); c.moveTo(k+h,0); c.lineTo(k,h); c.stroke(); } }); }
+function skyWasteTex(){ return tx('skyw',1024,512,(c,w,h)=>{ const g=c.createLinearGradient(0,0,0,h); g.addColorStop(0,'#2a1d17'); g.addColorStop(0.45,'#6e4a36'); g.addColorStop(0.7,'#b87a4a'); g.addColorStop(1,'#d9a066'); c.fillStyle=g; c.fillRect(0,0,w,h);
+  const sg=c.createRadialGradient(256,330,10,256,330,170); sg.addColorStop(0,'rgba(255,226,160,.95)'); sg.addColorStop(0.25,'rgba(255,190,110,.55)'); sg.addColorStop(1,'rgba(255,170,90,0)'); c.fillStyle=sg; c.fillRect(0,100,w,400);
+  c.fillStyle='rgba(255,236,190,.9)'; c.beginPath(); c.arc(256,330,26,0,7); c.fill(); const r=rngMaker(12);
+  for(let i=0;i<34;i++){ c.fillStyle=`rgba(${60+r()*40},${40+r()*20},${30},${.08+r()*.14})`; c.fillRect(r()*w,60+r()*220,120+r()*260,6+r()*10); }
+  c.fillStyle='#2c2018'; for(let x=0;x<w;x+=10+r()*16){ const bh=20+r()*60; c.fillRect(x,h-bh-20,8+r()*14,bh+20); } c.fillStyle='#2c2018'; c.fillRect(0,h-22,w,22); }); }
+function wasteGroundTex(){ return tx('wground',256,256,(c,w,h)=>{ const r=rngMaker(3); c.fillStyle='#4a3a2a'; c.fillRect(0,0,w,h);
+  for(let i=0;i<300;i++){ c.fillStyle=`rgba(${70+r()*40},${55+r()*20},${35},${.2+r()*.25})`; c.fillRect(r()*w,r()*h,6+r()*16,3+r()*8); }
+  c.strokeStyle='rgba(20,14,10,.45)'; c.lineWidth=1.5; for(let i=0;i<16;i++){ c.beginPath(); let x=r()*w,y=r()*h; c.moveTo(x,y); for(let k=0;k<5;k++){ x+=(r()-.5)*40; y+=(r()-.5)*40; c.lineTo(x,y); } c.stroke(); }
+  c.fillStyle='rgba(10,8,6,.35)'; for(let i=0;i<4;i++){ c.beginPath(); c.ellipse(r()*w,r()*h,14+r()*20,8+r()*10,r()*3,0,7); c.fill(); } }); }
+
+function pot(g, x, z, s){ const p = mk(g,'a-entity',{ position:`${x} 0 ${z}` }); cyl(p,[0,0.3*s,0],0.28*s,0.6*s,'#8a5a3a'); cyl(p,[0,0.62*s,0],0.26*s,0.04*s,'#3a2a1a');
+  cyl(p,[0,1.0*s,0],0.03*s,0.8*s,'#4a3322'); [[0,1.45],[0.25,1.2],[-0.25,1.25],[0.1,1.7],[-0.12,1.55]].forEach(l=>sph(p,[l[0]*s,l[1]*s,(l[0]*0.5)*s],0.3*s,'#3f7a45')); return p; }
+
+/* ---------- ENVIRONMENT 1 : HALLIDAY'S ROOM (1980s rec room, wood paneling + shag carpet) ---------- */
 function buildRoom(){
   const g = GROUPS.room = mk(world,'a-entity',{ id:'env-room', position:'0 0 0' });
   const H = 4.6;
-  mk(g,'a-entity',{ light:'type:ambient;color:#fff0d6;intensity:0.95' });
+  mk(g,'a-entity',{ light:'type:ambient;color:#ffeccc;intensity:0.85' });
   [[-6,4,-5],[6,4,-5],[-6,4,6],[6,4,6]].forEach(p => light(g,p,'#ffdcae',0.5,22));
 
-  const carpet = texture(256,256,(c,w,h)=>{ c.fillStyle='#6e4426'; c.fillRect(0,0,w,h); const cols=['#a8561f','#556b2f','#d9bf86','#8a3d1c'];
-    for(let i=0;i<8;i++){ c.strokeStyle=cols[i%4]; c.lineWidth=i%2?10:5; c.strokeRect(14+i*14,14+i*14,w-28-i*28,h-28-i*28); } });
-  const wood = texture(256,256,(c,w,h)=>{ const r=rngMaker(11); for(let i=0;i<4;i++){ const l=44+r()*14; c.fillStyle=`hsl(26,42%,${l*0.6}%)`; c.fillRect(i*64,0,64,h);
-      c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(i*64,0,3,h); for(let k=0;k<14;k++){ c.fillStyle='rgba(0,0,0,.07)'; c.fillRect(i*64+6+r()*50,0,2,h); } } });
-  const fl = mk(g,'a-plane',{ rotation:'-90 0 0', width:24, height:24 }); fl.setAttribute('material',{ src:carpet, repeat:'12 12', roughness:1 });
-  const ce = mk(g,'a-plane',{ position:`0 ${H} 0`, rotation:'90 0 0', width:24, height:24 }); ce.setAttribute('material','color:#cfc3a6;roughness:1');
-  [[0,-12,0],[0,12,180],[12,0,-90],[-12,0,90]].forEach(w=>{
-    const wl = mk(g,'a-plane',{ position:`${w[0]} ${H/2} ${w[1]}`, rotation:`0 ${w[2]} 0`, width:24, height:H }); wl.setAttribute('material',{ src:wood, repeat:'12 1', roughness:1 }); });
-  [[-6,-6],[6,-6],[-6,6],[6,6]].forEach(p => box(g,[p[0],H-0.03,p[1]],[2.4,0.05,0.6],'#fffbe8',{ e:'#fff4d0', ei:0.7 }));
+  const carpet = tx('carpet',256,256,(c,w,h)=>{ c.fillStyle='#6e4426'; c.fillRect(0,0,w,h); const cols=['#a8561f','#556b2f','#d9bf86','#8a3d1c'];
+    for(let i=0;i<8;i++){ c.strokeStyle=cols[i%4]; c.lineWidth=i%2?10:5; c.strokeRect(14+i*14,14+i*14,w-28-i*28,h-28-i*28); }
+    const r=rngMaker(2); for(let i=0;i<500;i++){ c.fillStyle=`rgba(0,0,0,${r()*.12})`; c.fillRect(r()*w,r()*h,2,2); } });
+  const wood = tx('wood',256,256,(c,w,h)=>{ const r=rngMaker(11); for(let i=0;i<4;i++){ const l=44+r()*14; c.fillStyle=`hsl(26,42%,${l*0.6}%)`; c.fillRect(i*64,0,64,h);
+      c.fillStyle='rgba(0,0,0,.4)'; c.fillRect(i*64,0,3,h); for(let k=0;k<18;k++){ c.fillStyle='rgba(0,0,0,.08)'; c.fillRect(i*64+6+r()*50,0,2,h); } } });
+  const plaster = tx('plaster',64,64,(c,w,h)=>{ c.fillStyle='#d9cdb0'; c.fillRect(0,0,w,h); const r=rngMaker(4); for(let i=0;i<120;i++){ c.fillStyle=`rgba(120,100,70,${r()*.06})`; c.fillRect(r()*w,r()*h,2,2); } });
+  const rugTex = tx('rug',256,256,(c,w,h)=>{ c.fillStyle='#7a2f22'; c.fillRect(0,0,w,h); c.strokeStyle='#e0c88a'; c.lineWidth=8; c.strokeRect(14,14,w-28,h-28); c.strokeStyle='#2f4a5a'; c.lineWidth=14; c.strokeRect(36,36,w-72,h-72);
+    c.fillStyle='#e0c88a'; c.beginPath(); c.moveTo(w/2,64); c.lineTo(w-64,h/2); c.lineTo(w/2,h-64); c.lineTo(64,h/2); c.closePath(); c.fill(); c.fillStyle='#2f4a5a'; c.beginPath(); c.arc(w/2,h/2,40,0,7); c.fill(); });
 
-  /* leaderboard (north wall) + wooden plaque (south wall) */
-  box(g,[0,2.4,-11.93],[7.7,4.5,0.12],'#2b1a0e');
+  tplane(g,[0,0,0],24,24,carpet,{ rot:[-90,0,0], m:{ repeat:'12 12', roughness:1 } });
+  tplane(g,[0,0.01,0],8,8,rugTex,{ rot:[-90,0,0], m:{ roughness:1 } });
+  const ce = mk(g,'a-plane',{ position:`0 ${H} 0`, rotation:'90 0 0', width:24, height:24 }); tmat(ce, plaster, { repeat:'8 8', roughness:1 });
+  [[0,-12,0],[0,12,180],[12,0,-90],[-12,0,90]].forEach(w=>{
+    const rot = `0 ${w[2]} 0`;
+    const lo = mk(g,'a-plane',{ position:`${w[0]} 1.35 ${w[1]}`, rotation:rot, width:24, height:2.7 }); tmat(lo, wood, { repeat:'12 1', roughness:1 });
+    const up = mk(g,'a-plane',{ position:`${w[0]} 3.65 ${w[1]}`, rotation:rot, width:24, height:1.9 }); tmat(up, plaster, { repeat:'8 1', roughness:1 }); });
+  /* molding, baseboards, crown */
+  [[0,-11.94,24,0],[0,11.94,24,0],[11.94,0,24,90],[-11.94,0,24,90]].forEach(w=>{ const r=w[3]?[0,90,0]:[0,0,0];
+    box(g,[w[0],2.72,w[1]],[w[3]?0.12:24,0.12,w[3]?24:0.12],'#3a2412'); box(g,[w[0],0.1,w[1]],[w[3]?0.1:24,0.2,w[3]?24:0.1],'#2a180c'); box(g,[w[0],H-0.08,w[1]],[w[3]?0.2:24,0.16,w[3]?24:0.2],'#c4b592'); });
+  [-8,-4,0,4,8].forEach(x=>box(g,[x,H-0.14,0],[0.3,0.28,24],'#4a2f18'));   /* ceiling beams */
+  [[-6,-6],[6,-6],[-6,6],[6,6]].forEach(p => box(g,[p[0],H-0.32,p[1]],[2.4,0.05,0.6],'#fffbe8',{ e:'#fff4d0', ei:0.7 }));
+  /* ceiling fan */
+  const fan = mk(g,'a-entity',{ position:`0 ${H-0.35} 3` }); cyl(fan,[0,0.28,0],0.04,0.5,'#2a2a2a'); cyl(fan,[0,0,0],0.22,0.14,'#6b4a2c'); cyl(fan,[0,-0.1,0],0.1,0.08,'#f4e8c8',{ e:'#ffeecc', ei:0.5 });
+  const blades = mk(fan,'a-entity',{}); [0,90,180,270].forEach(a=>box(blades,[Math.cos(a*Math.PI/180)*0.75,0,Math.sin(a*Math.PI/180)*0.75],[1.3,0.03,0.2],'#7a5230',{ rot:[0,-a,0] })); spin(blades, 2600);
+
+  /* --- Leaderboard (north) with speakers --- */
+  box(g,[0,2.4,-11.93],[7.7,4.5,0.12],'#2b1a0e'); box(g,[0,2.4,-11.9],[7.5,4.3,0.04],'#120a06');
   const lb = mk(g,'a-plane',{ id:'lbPlane', position:'0 2.4 -11.86', width:7.2, height:4.05 }); lb.setAttribute('material',{ shader:'flat', src:'#lbCanvas' });
-  box(g,[0,2.8,11.93],[6.4,0.8,0.1],'#4a2f18'); txt(g,"HALLIDAY'S ROOM  ·  EST. 1980s",[0,2.8,11.86],{ w:5.8, c:'#e9d9b4', rot:[0,180,0] });
+  [-5.4,5.4].forEach(x=>{ box(g,[x,1.3,-11.6],[0.9,2.6,0.6],'#2a1a10'); cyl(g,[x,0.8,-11.28],0.28,0.06,'#111',{ rot:[90,0,0] }); cyl(g,[x,1.8,-11.28],0.2,0.06,'#1a1a1a',{ rot:[90,0,0] }); cyl(g,[x,2.25,-11.28],0.06,0.04,'#555',{ rot:[90,0,0] }); });
+
+  /* --- South wall: plaque + two windows --- */
+  box(g,[0,2.9,11.93],[5.6,0.8,0.1],'#4a2f18'); txt(g,"HALLIDAY'S ROOM  ·  EST. 1980s",[0,2.9,11.86],{ w:5.2, c:'#e9d9b4', rot:[0,180,0] });
+  [-8.5,8.5].forEach(x=>{ const win = mk(g,'a-entity',{ position:`${x} 2.5 11.9`, rotation:'0 180 0' });
+    box(win,[0,0,0.01],[2.1,1.9,0.1],'#e8dcc0'); tplane(win,[0,0,0.07],1.8,1.6,windowTex(),{ m:{ shader:'flat' } });
+    for(let k=0;k<7;k++) box(win,[0,0.7-k*0.2,0.1],[1.8,0.1,0.02],'#e8dcc0',{ rot:[18,0,0] });   /* venetian blind slats */
+    box(win,[0,0,0.09],[0.05,1.6,0.03],'#e8dcc0'); box(win,[0,-1.02,0.05],[2.4,0.08,0.3],'#c9bda0'); });
 
   /* --- HOBBY TABLE with five miniatures (KEY = the Stacks) --- */
   const ht = mk(g,'a-entity',{ position:'-6.5 0 -6.5' });
   box(ht,[0,0.85,0],[4.6,0.1,1.7],'#6b4a2c'); [[-2.1,-.7],[2.1,-.7],[-2.1,.7],[2.1,.7]].forEach(p=>box(ht,[p[0],0.4,p[1]],[0.1,0.8,0.1],'#3a2515'));
-  box(ht,[0,0.93,0.5],[4.2,0.04,0.5],'#4e7a45',{ r:1 });   /* green hobby mat */
+  box(ht,[0,0.93,0.5],[4.2,0.04,0.5],'#4e7a45',{ r:1 });
+  [[-1.9,0.55,'#b5452f'],[-1.4,0.35,'#2f5f86'],[-0.9,0.6,'#e1b04a'],[1.3,0.4,'#3f7d4e']].forEach(d=>cyl(ht,[d[0],0.99,d[1]],0.05,0.06,d[2]));   /* paint pots */
+  [[1.7,0.1],[1.85,0.3],[1.55,0.25]].forEach((d,i)=>shape(ht,'a-icosahedron',[d[0],1.0,d[1]],{ radius:0.05 },['#c9524a','#4a7fb8','#e8e0d0'][i]));   /* dice */
+  cyl(ht,[-2.0,1.1,-0.5],0.02,0.4,'#222'); shape(ht,'a-cone',[-2.0,1.4,-0.5],{ 'radius-bottom':0.2,'radius-top':0.06,height:0.2 },'#d9c28a',{ e:'#ffdd99', ei:0.6 });   /* desk lamp */
   const stacks = mk(g,'a-entity',{ position:'-8.3 0.9 -6.5' });
   box(stacks,[0,0.02,0],[1.3,0.04,0.9],'#4a4a52'); const rr = rngMaker(21);
   for (let i=0;i<5;i++) for (let j=0;j<3;j++){ const lv = 3+Math.floor(rr()*5);
     for (let l=0;l<lv;l++) box(stacks,[-0.5+i*0.25+(rr()-.5)*0.03, 0.08+l*0.075, -0.3+j*0.3+(rr()-.5)*0.03],[0.2,0.07,0.17],STACKPAL[Math.floor(rr()*7)]); }
-  reg('stacks-model', stacks, 'Miniature', 'Not now — this model has nothing new to tell you.');
+  box(stacks,[0.58,0.4,0.4],[0.015,0.8,0.015],'#aaa'); box(stacks,[-0.58,0.4,-0.4],[0.015,0.8,0.015],'#aaa'); box(stacks,[0,0.8,0.4],[1.16,0.01,0.01],'#aaa');
+  reg('stacks-model', stacks, 'Miniature', 'Not now. This model has nothing new to tell you.');
   const car = mk(g,'a-entity',{ position:'-6.9 0.9 -6.5', rotation:'0 25 0' });
   box(car,[0,0.12,0],[0.7,0.14,0.28],'#b8bcc2',{ m:0.6 }); box(car,[0.02,0.23,0],[0.35,0.1,0.24],'#2a2f36'); [[-.22,-.15],[.22,-.15],[-.22,.15],[.22,.15]].forEach(p=>cyl(car,[p[0],0.07,p[1]],0.07,0.05,'#111',{ rot:[90,0,0] }));
-  reg('model-car', car, 'Miniature', 'A tiny sports car with gull-wing doors. Cool, but it isn\'t the place your riddle describes.');
+  box(car,[0.36,0.14,0],[0.02,0.04,0.2],'#ffd27a',{ e:'#ffd27a', ei:0.8 });
+  reg('model-car', car, 'Miniature', 'A tiny sports car with gull wing doors. Cool, but it isn\'t the place your riddle describes.');
   const castle = mk(g,'a-entity',{ position:'-5.5 0.9 -6.5' });
   box(castle,[0,0.15,0],[0.9,0.3,0.7],'#9c978a'); [[-.4,-.3],[.4,-.3],[-.4,.3],[.4,.3]].forEach(p=>{ cyl(castle,[p[0],0.4,p[1]],0.1,0.6,'#a8a396'); shape(castle,'a-cone',[p[0],0.8,p[1]],{ 'radius-bottom':0.13,'radius-top':0,height:0.22 },'#8a3d1c'); });
+  box(castle,[0,0.12,0.36],[0.22,0.24,0.02],'#3a2515');
   reg('model-castle', castle, 'Miniature', 'A tiny castle with a painted drawbridge. Charming, but a castle is not a neighborhood.');
   const rocket = mk(g,'a-entity',{ position:'-4.7 0.9 -6.5' });
   cyl(rocket,[0,0.45,0],0.1,0.7,'#e8e4da'); shape(rocket,'a-cone',[0,0.95,0],{ 'radius-bottom':0.1,'radius-top':0,height:0.25 },'#b5452f');
   [0,120,240].forEach(a=>box(rocket,[Math.cos(a*Math.PI/180)*0.13,0.2,Math.sin(a*Math.PI/180)*0.13],[0.03,0.2,0.1],'#b5452f',{ rot:[0,-a,0] })); box(rocket,[0,0.04,0],[0.4,0.08,0.4],'#555');
-  reg('model-rocket', rocket, 'Miniature', 'A toy rocket on a launch stand. It is going somewhere; your riddle is about somewhere people are stuck.');
+  reg('model-rocket', rocket, 'Miniature', 'A toy rocket on a launch stand. It is going somewhere, while your riddle is about somewhere people are stuck.');
 
-  /* --- Couch + TV (west) --- */
+  /* --- Living area (west): couch, coffee table, TV, game console, bean bag --- */
   const cou = mk(g,'a-entity',{ position:'-6.5 0 7.5', rotation:'0 -90 0' });
   box(cou,[0,0.3,0],[2.4,0.5,0.95],'#a85a1c'); box(cou,[0,0.8,-0.4],[2.4,0.7,0.2],'#a85a1c'); [-1.2,1.2].forEach(x=>box(cou,[x,0.55,0],[0.2,0.6,0.95],'#8f4a14'));
-  box(cou,[0,0.58,0.05],[2,0.12,0.7],'#c0732a');
-  reg('couch', cou, 'Couch', 'A burnt-orange sofa with a suspicious number of crumbs. Comfortable, not clever.');
-  box(g,[-6.5,0.2,5.2],[0.7,0.4,1.6],'#5a3a22');   /* coffee table */
+  [-0.6,0.6].forEach(x=>box(cou,[x,0.6,0.06],[1.0,0.12,0.7],'#c0732a')); box(cou,[-0.85,0.85,0.1],[0.45,0.45,0.12],'#e1b04a',{ rot:[0,0,12] }); box(cou,[0.8,0.85,0.1],[0.45,0.45,0.12],'#4a6f5a',{ rot:[0,0,-8] });
+  box(cou,[0.1,0.67,0.15],[0.12,0.04,0.22],'#222');   /* controller */
+  reg('couch', cou, 'Couch', 'A burnt orange sofa with a suspicious number of crumbs. Comfortable, not clever.');
+  box(g,[-6.5,0.2,5.2],[0.7,0.4,1.6],'#5a3a22'); box(g,[-6.5,0.42,5.2],[0.8,0.04,1.7],'#7a5230');
+  box(g,[-6.5,0.5,4.8],[0.3,0.1,0.3],'#c9524a'); cyl(g,[-6.4,0.52,5.5],0.04,0.12,'#c9302a'); cyl(g,[-6.6,0.52,5.7],0.04,0.12,'#2a5fb0');   /* pizza box + soda cans */
+  box(g,[-6.5,0.47,5.1],[0.07,0.07,0.07],'#e0c34a');   /* cube */
+  const bean = sph(g,[-8.8,0.35,5.6],0.6,'#2f6f9e'); bean.setAttribute('scale','1 0.6 1');
   const tv = mk(g,'a-entity',{ position:'-11.2 0 7.5', rotation:'0 90 0' });
-  box(tv,[0,0.25,0],[1.5,0.5,0.9],'#3b2b1d'); box(tv,[0,0.95,0],[1.15,0.9,0.85],'#bdb8a8'); box(tv,[0,0.95,0.43],[0.88,0.65,0.05],'#16302a',{ e:'#6fa890', ei:0.45 });
-  box(tv,[0.4,0.55,0.25],[0.5,0.08,0.3],'#222');
+  box(tv,[0,0.25,0],[1.5,0.5,0.9],'#3b2b1d'); box(tv,[0,0.95,0],[1.15,0.9,0.85],'#bdb8a8'); tplane(tv,[0,0.95,0.43],0.88,0.65,crtTex(),{ m:{ shader:'flat' } });
+  box(tv,[0.4,0.55,0.25],[0.5,0.08,0.3],'#222'); [-0.5,0.5].forEach(x=>cyl(tv,[x,0.6,0.2],0.02,0.5,'#aaa',{ rot:[0,0,x>0?-25:25] }));
+  box(tv,[-0.3,0.54,0.3],[0.34,0.06,0.2],'#6b4a2c'); box(tv,[-0.5,0.62,0.3],[0.04,0.1,0.04],'#111');   /* console + joystick */
   reg('tv', tv, 'CRT television', 'Static hisses on the screen. A game console sits beneath it, long since powered down.');
+  const clk = mk(g,'a-entity',{ position:'-11.9 3.4 7.5', rotation:'0 90 0' }); cyl(clk,[0,0,0],0.3,0.06,'#f4f0e4',{ rot:[90,0,0] }); box(clk,[0,0.1,0.04],[0.02,0.2,0.01],'#111'); box(clk,[0.07,0,0.04],[0.14,0.02,0.01],'#111');
 
-  /* --- Desk + computer (south) --- */
+  /* --- Desk + computer (south) + VHS rack --- */
   const dk = mk(g,'a-entity',{ position:'-5 0 10.6', rotation:'0 180 0' });
   box(dk,[0,0.75,0],[2.2,0.08,0.9],'#7a5230'); [[-1,-.35],[1,-.35],[-1,.35],[1,.35]].forEach(p=>box(dk,[p[0],0.37,p[1]],[0.08,0.74,0.08],'#4a2f18'));
-  box(dk,[0,1.1,-0.1],[0.7,0.55,0.55],'#cfc7b0'); box(dk,[0,1.12,0.18],[0.5,0.38,0.03],'#14221b',{ e:'#7fb08f', ei:0.5 }); box(dk,[0,0.82,0.3],[0.7,0.05,0.22],'#bfb7a0');
+  box(dk,[0,1.1,-0.1],[0.7,0.55,0.55],'#cfc7b0'); tplane(dk,[0,1.12,0.18],0.5,0.38,screenTex(1),{ m:{ shader:'flat' } }); box(dk,[0,0.82,0.3],[0.7,0.05,0.22],'#bfb7a0'); box(dk,[0.8,0.82,0],[0.22,0.04,0.3],'#bfb7a0'); box(dk,[-0.8,0.9,0.1],[0.3,0.2,0.04],'#d8d0b0',{ rot:[0,20,0] });
+  box(dk,[-0.2,0.45,0.9],[0.5,0.06,0.5],'#4a3322'); cyl(dk,[-0.2,0.25,0.9],0.05,0.4,'#222');   /* chair */
   reg('computer', dk, 'Beige computer', 'A beige home computer with a blinking cursor. "LOADING..." it says, forever.');
+  const vhs = mk(g,'a-entity',{ position:'1.2 0 11.55', rotation:'0 180 0' }); box(vhs,[0,0.55,0],[2.4,1.1,0.4],'#3a2412'); const vr=rngMaker(8);
+  [0.3,0.65,0.95].forEach(y=>{ box(vhs,[0,y-0.15,0],[2.3,0.03,0.4],'#2a180c'); for(let i=0;i<14;i++) box(vhs,[-1.05+i*0.16,y,0.02],[0.06,0.26,0.2],i%3?'#161616':'#2a2a2a'),box(vhs,[-1.05+i*0.16,y,0.13],[0.05,0.1,0.01],['#e0605a','#e1b04a','#4aa3c9','#f4f0e4'][Math.floor(vr()*4)]); });
 
-  /* --- Bookshelf + poster (west) --- */
+  /* --- Bookshelf + cartridge shelf + posters (west wall) --- */
   const bs = mk(g,'a-entity',{ position:'-11.7 0 -1.5', rotation:'0 90 0' });
   box(bs,[0,1.3,0],[3,2.6,0.5],'#4b2f1a'); const bp=['#a8402e','#2f5f86','#b8921f','#3f6d4e','#6a4b86','#d8d0c0'], br=rngMaker(5);
   [0.55,1.25,1.95].forEach(y=>{ box(bs,[0,y,0.02],[2.9,0.04,0.45],'#2e1c0e'); for(let i=0;i<12;i++){ const h=0.35+br()*0.22; box(bs,[-1.3+i*0.23,y+0.02+h/2,0.03],[0.13,h,0.3],bp[Math.floor(br()*6)]); } });
-  reg('bookshelf', bs, 'Bookshelf', 'Manuals, comics, and strategy guides. Halliday read everything — but this isn\'t what your riddle describes.');
+  box(bs,[1.1,2.5,0.1],[0.3,0.15,0.3],'#c9a24a',{ m:0.8 });
+  reg('bookshelf', bs, 'Bookshelf', 'Manuals, comics, and strategy guides. Halliday read everything, but this isn\'t what your riddle describes.');
+  const cs = mk(g,'a-entity',{ position:'-11.75 0 -9.6', rotation:'0 90 0' }); box(cs,[0,1.0,0],[2.6,2.0,0.4],'#3a2412'); const cr=rngMaker(15);
+  [0.4,0.95,1.5].forEach(y=>{ box(cs,[0,y-0.2,0],[2.5,0.03,0.4],'#2a180c'); for(let i=0;i<16;i++){ box(cs,[-1.15+i*0.15,y-0.02,0.04],[0.1,0.15,0.04],['#1a1a1a','#3a3a3a','#555'][Math.floor(cr()*3)]); box(cs,[-1.15+i*0.15,y-0.0,0.07],[0.07,0.07,0.01],['#e0605a','#e1b04a','#4aa3c9','#9bd06a','#f4f0e4'][Math.floor(cr()*5)]); } });
+  [-0.6,0.2,0.9].forEach((x,i)=>{ box(cs,[x,1.75,0.05],[0.08,0.3,0.06],['#b5452f','#2f5f86','#6f8f58'][i]); sph(cs,[x,1.95,0.05],0.07,'#d8b89a'); });
+  reg('cartridges', cs, 'Game shelf', 'Rows of cartridges and a few action figures. Great taste, but not your answer.');
   const po = mk(g,'a-entity',{ position:'-11.95 2.2 3', rotation:'0 90 0' });
-  box(po,[0,0,0],[1.3,1.8,0.04],'#2a1a3a'); txt(po,'DUNGEONS\n&\nDRAGONS',[0,0.35,0.03],{ w:1.1, c:'#e1b04a' }); txt(po,'ROLL FOR INITIATIVE',[0,-0.55,0.03],{ w:1, c:'#d9c9a0' });
-  reg('poster', po, 'Poster', 'A dog-eared tabletop-game poster. Fun, but not what your riddle is looking for.');
+  box(po,[0,0,0],[1.3,1.8,0.04],'#1a0a1a'); tplane(po,[0,0,0.03],1.2,1.7,posterTex(1),{ m:{ shader:'flat' } });
+  reg('poster', po, 'Poster', 'A dog eared tabletop game poster. Fun, but not what your riddle is looking for.');
+  [[-11.95,2.3,-5.2,'p0',0],[-11.95,2.3,-10.4,'p1',2]].forEach(a=>{ const q=mk(g,'a-entity',{ position:`${a[0]} ${a[1]} ${a[2]}`, rotation:'0 90 0' }); box(q,[0,0,0],[1.2,1.65,0.04],'#1a0a1a'); tplane(q,[0,0,0.03],1.1,1.55,posterTex(a[4]),{ m:{ shader:'flat' } }); });
 
-  /* --- Arcade cabinets (east, north end) --- */
+  /* --- Arcade cabinets (east, north end) + posters --- */
   function arcade(id, z, col, msg){
     const a = mk(g,'a-entity',{ position:`11.3 0 ${z}`, rotation:'0 -90 0' });
-    box(a,[0,0.9,0],[0.9,1.8,0.8],col); box(a,[0,1.35,0.4],[0.7,0.52,0.05],'#1a2a20',{ e:'#c9a14a', ei:0.5 }).setAttribute('rotation','-12 0 0');
-    box(a,[0,0.98,0.5],[0.8,0.08,0.35],'#2a2a2a'); sph(a,[-0.2,1.08,0.52],0.05,'#c93a2a'); box(a,[0,1.92,0.1],[0.9,0.26,0.5],'#2a2218'); txt(a,'ARCADE',[0,1.92,0.36],{ w:1, c:'#e9d9b4' });
+    box(a,[0,0.9,0],[0.9,1.8,0.8],col); box(a,[0,0.35,0.41],[0.7,0.5,0.02],'#111'); tplane(a,[0,1.35,0.41],0.62,0.46,crtTex(),{ m:{ shader:'flat' }, rot:[-12,0,0] });
+    box(a,[0,0.98,0.5],[0.8,0.08,0.35],'#2a2a2a'); sph(a,[-0.2,1.08,0.52],0.05,'#c93a2a'); sph(a,[0.1,1.07,0.5],0.04,'#e1b04a'); sph(a,[0.22,1.07,0.5],0.04,'#4aa3c9'); box(a,[0,1.92,0.1],[0.9,0.26,0.5],'#2a2218',{ e:'#ffd27a', ei:0.25 }); txt(a,'ARCADE',[0,1.92,0.36],{ w:1, c:'#e9d9b4' });
     reg(id, a, 'Arcade', msg); }
-  arcade('arcade1', -9.5, '#5a2a1c', 'An arcade cabinet humming a looping attract-mode tune. Nostalgic — but not your answer.');
+  arcade('arcade1', -9.5, '#5a2a1c', 'An arcade cabinet humming a looping attract mode tune. Nostalgic, but not your answer.');
   arcade('arcade2', -7,   '#1f3a4a', 'Another cabinet, high score initials "AAA". Not what you\'re looking for.');
+  [[11.95,2.3,-4.6,3],[11.95,2.3,4.8,4],[11.95,2.3,10.4,5]].forEach(a=>{ const q=mk(g,'a-entity',{ position:`${a[0]} ${a[1]} ${a[2]}`, rotation:'0 -90 0' }); box(q,[0,0,0],[1.2,1.65,0.04],'#1a0a1a'); tplane(q,[0,0,0.03],1.1,1.55,posterTex(a[3]),{ m:{ shader:'flat' } }); });
 
   /* --- East doors: two closets and the gate (no knob) --- */
   function door(id, z, label, isGate, msg){
@@ -565,27 +717,29 @@ function buildRoom(){
   }
   door('door-closet', -2, 'CLOSET', false, 'Just a closet: extension cords, mothballs, and a very old VHS rewinder.');
   door('door-supply', 2.5, 'SUPPLIES', false, 'A supply room. Batteries, floppy disks, and one lonely roll of tape.');
-  door('portal-room', 7, '', true, 'The door is quiet and plain. Nothing happens... yet.');
+  door('portal-room', 7, '', true, 'The door is quiet and plain. Nothing happens yet.');
 
-  /* --- misc decoys --- */
+  /* --- misc decor & decoys --- */
   const bb = mk(g,'a-entity',{ position:'4 0 11.3', rotation:'0 180 0' });
-  box(bb,[0,0.3,0],[1.6,0.6,0.5],'#4b2f1a'); box(bb,[0,0.78,0],[0.9,0.32,0.2],'#111'); [-0.27,0.27].forEach(x=>cyl(bb,[x,0.78,0.11],0.11,0.04,'#555',{ rot:[90,0,0] }));
+  box(bb,[0,0.3,0],[1.6,0.6,0.5],'#4b2f1a'); box(bb,[0,0.78,0],[0.9,0.32,0.2],'#111'); [-0.27,0.27].forEach(x=>cyl(bb,[x,0.78,0.11],0.11,0.04,'#555',{ rot:[90,0,0] })); box(bb,[0,0.95,0],[0.5,0.02,0.02],'#aaa');
   reg('boombox', bb, 'Boombox', 'A boombox with a cassette stuck inside. Not what your riddle is about.');
   const fc = mk(g,'a-entity',{ position:'9 0 11.3', rotation:'0 180 0' });
-  [0,0.8].forEach(x=>box(fc,[x,0.65,0],[0.75,1.3,0.6],'#6f7a74',{ m:0.3 })); box(fc,[0,1.0,0.31],[0.3,0.04,0.02],'#222'); box(fc,[0.8,1.0,0.31],[0.3,0.04,0.02],'#222');
+  [0,0.8].forEach(x=>box(fc,[x,0.65,0],[0.75,1.3,0.6],'#6f7a74',{ m:0.3 })); box(fc,[0,1.0,0.31],[0.3,0.04,0.02],'#222'); box(fc,[0.8,1.0,0.31],[0.3,0.04,0.02],'#222'); box(fc,[0.4,1.33,0],[1.6,0.04,0.6],'#5a655f');
   reg('cabinet', fc, 'Filing cabinets', 'Filing cabinets full of old partnership paperwork. Dry reading.');
-  const lamp = mk(g,'a-entity',{ position:'-9.5 0 -10' }); cyl(lamp,[0,0.8,0],0.03,1.6,'#2a2a2a'); shape(lamp,'a-cone',[0,1.7,0],{ 'radius-bottom':0.3,'radius-top':0.12,height:0.35 },'#d9c28a');
+  const fr = mk(g,'a-entity',{ position:'11 0 10.9' }); box(fr,[0,0.45,0],[0.8,0.9,0.7],'#e8e4da',{ m:0.2 }); box(fr,[-0.34,0.6,0.37],[0.04,0.4,0.03],'#999'); reg('fridge', fr, 'Mini fridge', 'A mini fridge stocked with flat soda and one very old sandwich.');
+  const lamp = mk(g,'a-entity',{ position:'-10.2 0 -11' }); cyl(lamp,[0,0.8,0],0.03,1.6,'#2a2a2a'); shape(lamp,'a-cone',[0,1.7,0],{ 'radius-bottom':0.3,'radius-top':0.12,height:0.35 },'#d9c28a',{ e:'#ffdd99', ei:0.5 });
+  pot(g,-10.6,10.6,1.2); pot(g,10.7,-11,1.1); pot(g,-10.6,-4.6,0.9);
   const pe = mk(g,'a-entity',{ position:'0 0 0' }); cyl(pe,[0,0.5,0],0.5,1,'#cfc3a0',{ m:0.3 }); cyl(pe,[0,1.02,0],0.55,0.06,'#a89868',{ m:0.5 });
-  reg('pedestal', pe, 'Empty pedestal', 'An empty pedestal. Something is missing — but not yet.');
+  reg('pedestal', pe, 'Empty pedestal', 'An empty pedestal. Something is missing, but not yet.');
 }
 
 /* Easter egg is created only when the player has earned it */
 function spawnEgg(){
   if (INTERACT.egg) { INTERACT.egg.group.setAttribute('visible', true); return; }
   const e = mk(GROUPS.room,'a-entity',{ position:'0 1.62 0' });
-  const egg = sph(e,[0,0,0],0.33,'#e1b04a',{ m:0.9, r:0.2, e:'#ffb300', ei:0.5 }); egg.setAttribute('scale','1 1.35 1');
+  const egg = sph(e,[0,0,0],0.33,'#ffd23f',{ m:0.9, r:0.2, e:'#ffb300', ei:0.5 }); egg.setAttribute('scale','1 1.35 1');
   spin(e, 5000); e.setAttribute('animation__bob', { property:'position', to:'0 1.78 0', dir:'alternate', loop:true, dur:1400, easing:'easeInOutSine' });
-  light(e,[0,0,0],'#e1b04a',1.2,12);
+  light(e,[0,0,0],'#ffd23f',1.2,12);
   reg('egg', e, 'The Golden Easter Egg', 'Not yet.');
   scene.querySelector('#cam').components.raycaster.refreshObjects();
 }
@@ -593,44 +747,64 @@ function spawnEgg(){
 /* ---------- ENVIRONMENT 2 : WASTELAND GRID (large, hazy, cluttered) ---------- */
 function buildWaste(){
   const g = GROUPS.waste = mk(world,'a-entity',{ id:'env-waste', position:'200 0 0', visible:'false' });
-  const skyTex = texture(8,256,(c,w,h)=>{ const gr=c.createLinearGradient(0,0,0,h); gr.addColorStop(0,'#3a2a20'); gr.addColorStop(0.6,'#8c6a4c'); gr.addColorStop(1,'#b48a62'); c.fillStyle=gr; c.fillRect(0,0,w,h); });
-  const sky = mk(g,'a-sky',{}); sky.setAttribute('material',{ shader:'flat', src:skyTex, fog:false });
+  const sky = mk(g,'a-sky',{}); sky.setAttribute('material',{ shader:'flat', src:skyWasteTex(), fog:false });
   mk(g,'a-entity',{ light:'type:ambient;color:#d0a77f;intensity:0.95' });
-  mk(g,'a-entity',{ light:'type:directional;color:#ffd09a;intensity:0.6', position:'-10 18 8' });
+  mk(g,'a-entity',{ light:'type:directional;color:#ffd09a;intensity:0.65', position:'-30 18 -10' });
+  const fireLight = light(g,[6,1.6,36],'#ff9a3a',1.0,14); fireLight.setAttribute('animation__flick',{ property:'light.intensity', from:0.7, to:1.3, dir:'alternate', loop:true, dur:260, easing:'easeInOutSine' });
 
-  const grid = texture(256,256,(c,w,h)=>{ const r=rngMaker(3); c.fillStyle='#4a3a2a'; c.fillRect(0,0,w,h);
-    for(let i=0;i<260;i++){ c.fillStyle=`rgba(${70+r()*40},${55+r()*20},${35},${.25+r()*.25})`; c.fillRect(r()*w,r()*h,6+r()*14,3+r()*8); } });
-  const gd = mk(g,'a-plane',{ rotation:'-90 0 0', width:320, height:320 }); gd.setAttribute('material',{ src:grid, repeat:'160 160', roughness:1 });
+  tplane(g,[0,0,0],320,320,wasteGroundTex(),{ rot:[-90,0,0], m:{ repeat:'160 160', roughness:1 } });
 
-  const OBJ = [[22,-30],[-36,-6],[-40,-40],[-20,-22],[30,-8],[-8,-38],[8,10],[-12,-32],[34,-38],[12,-18],[0,42],[24,20],[-30,24]];
+  const OBJ = [[22,-30],[-36,-6],[-40,-40],[-20,-22],[30,-8],[-8,-38],[8,10],[-12,-32],[34,-38],[12,-18],[0,42],[24,20],[-30,24],[6,36]];
   const free = (x,z,rad) => OBJ.every(k => Math.hypot(x-k[0], z-k[1]) > rad);
   const r = rngMaker(77), cols = ['#8a4b2a','#6e4a3a','#5b6b5e','#7a6a3a','#4e5560','#913b2e','#6d5a48'];
 
-  /* the Stacks: lots of towers; also a rim of tall ones for fenced-in feeling */
-  for (let i=0;i<46;i++){ const x=(r()*2-1)*66, z=(r()*2-1)*66; if(!free(x,z,7)) continue;
-    const lv = 2+Math.floor(r()*5);
-    for (let l=0;l<lv;l++) box(g,[x+(r()-.5)*0.5, 0.55+l*1.1, z+(r()-.5)*0.4],[2.4,1.05,1.5],cols[(l+i)%cols.length],{ rot:[0,(r()-.5)*14,0] }); }
-  for (let i=0;i<20;i++){ const a=i/20*Math.PI*2, x=Math.cos(a)*58, z=Math.sin(a)*58; for(let l=0;l<7;l++) box(g,[x,0.55+l*1.1,z],[3,1.05,2],cols[(l+i)%cols.length]); }
+  /* the Stacks: towers of textured trailers with scaffolds, lit windows, antennas */
+  for (let i=0;i<40;i++){ const x=(r()*2-1)*66, z=(r()*2-1)*66; if(!free(x,z,7)) continue;
+    const lv = 2+Math.floor(r()*5), cg = mk(g,'a-entity',{ position:`${x} 0 ${z}`, rotation:`0 ${(r()-.5)*40} 0` });
+    for (let l=0;l<lv;l++){ tbox(cg,[(r()-.5)*0.5,0.55+l*1.1,(r()-.5)*0.4],[2.4,1.05,1.5],trailerTex(i+l),{ rot:[0,(r()-.5)*8,0] }); if (r()<0.35) pln(cg,[(r()-.5)*0.6,0.55+l*1.1,0.78],0.5,0.38,'#ffcf6a',{ flat:true }); }
+    [-1.35,1.35].forEach(px=>cyl(cg,[px,lv*0.55,0.95],0.04,lv*1.1,'#3a3a3a')); for (let l=1;l<lv;l+=2) box(cg,[0,l*1.1+0.02,1.1],[2.9,0.06,0.5],'#4a4038');
+    box(cg,[1.0,lv*0.55,1.0],[0.05,lv*1.1,0.12],'#5a5048',{ rot:[0,0,0] });
+    if (r()<0.6){ cyl(cg,[0.6,lv*1.1+0.9,0],0.025,1.6,'#777'); box(cg,[0.6,lv*1.1+1.3,0],[0.9,0.03,0.03],'#777'); box(cg,[0.6,lv*1.1+1.0,0],[0.6,0.03,0.03],'#777'); }
+    else shape(cg,'a-cylinder',[-0.4,lv*1.1+0.35,0],{ 'radius-top':0.45,'radius-bottom':0.06,height:0.25 },'#c8c8c0',{ rot:[0,0,25] });
+  }
+  /* tall rim so the wasteland feels walled in */
+  for (let i=0;i<14;i++){ const a=i/14*Math.PI*2, x=Math.cos(a)*60, z=Math.sin(a)*60, cg=mk(g,'a-entity',{ position:`${x} 0 ${z}`, rotation:`0 ${-a*57.3+90} 0` });
+    for(let l=0;l<8;l++) tbox(cg,[0,0.55+l*1.1,0],[3.4,1.05,2],trailerTex(i+l)); }
+  /* the pocket that hides the badge handled below; extra container stacks, wrecked cars, fences, power lines */
+  [[-14,16,0],[34,30,40],[-46,10,-20],[44,-26,70],[18,-46,10],[-20,-44,-30]].forEach((c,i)=>{ const cg=mk(g,'a-entity',{ position:`${c[0]} 0 ${c[1]}`, rotation:`0 ${c[2]} 0` }); const col=['#8a3a2a','#2f5f86','#6a7a4a','#a88a3a'][i%4];
+    tbox(cg,[0,1.2,0],[6,2.4,2.4],containerTex(col)); tbox(cg,[0.6,3.6,0],[6,2.4,2.4],containerTex(['#2f5f86','#8a3a2a'][i%2]),{ rot:[0,6,0] }); });
+  function wreck(x,z,ry,col,tilt){ const w=mk(g,'a-entity',{ position:`${x} 0 ${z}`, rotation:`0 ${ry} 0` });
+    box(w,[0,0.5,0],[2.4,0.55,1.1],col,{ rot:[0,0,tilt] }); box(w,[-0.2,0.95,0],[1.2,0.45,0.95],'#3a3a3a',{ rot:[0,0,tilt] }); [[-.8,.55],[.8,.55],[-.8,-.55],[.8,-.55]].forEach(p=>cyl(w,[p[0],0.28,p[1]],0.28,0.2,'#151515',{ rot:[90,0,0] })); }
+  [[-26,34,10,'#7a3a2a',6],[18,26,-30,'#4a5a6a',0],[-6,22,70,'#8a7a3a',-8],[42,2,20,'#5a4a4a',4],[-44,-18,100,'#6a2f2f',0],[26,-4,-10,'#3f5a4a',10],[-16,-8,40,'#7a6a5a',-5],[2,-26,15,'#5a5a62',3],[38,40,80,'#8a4a2a',0],[-34,40,0,'#4a4a4a',7]].forEach(c=>{ if (free(c[0],c[1],5)) wreck(c[0],c[1],c[2],c[3],c[4]); });
+  [[-24,28,0],[10,38,70],[-4,-14,20],[36,12,90],[-30,-30,50],[20,-36,0]].forEach(f=>{ const fe=mk(g,'a-entity',{ position:`${f[0]} 0 ${f[1]}`, rotation:`0 ${f[2]} 0` });
+    tplane(fe,[0,1.1,0],12,2.2,chainTex(),{ m:{ repeat:'6 1', transparent:true, side:'double', alphaTest:0.1 } }); [-6,-2,2,6].forEach(x=>cyl(fe,[x,1.1,0],0.05,2.3,'#555')); });
+  [40,24,8,-8,-24,-40].forEach((z,i,arr)=>{ const px=14; cyl(g,[px,4,z],0.14,8,'#3a2c20'); box(g,[px,7.4,z],[2.6,0.12,0.12],'#3a2c20'); [-1.1,0,1.1].forEach(o=>{ if(i<arr.length-1) box(g,[px+o,7.1-Math.abs(o)*0.05,z-8],[0.02,0.02,16],'#1a1410'); }); });
+  /* barrel fire near spawn */
+  const bf = mk(g,'a-entity',{ position:'6 0 36' }); cyl(bf,[0,0.55,0],0.42,1.1,'#5a3a24',{ m:0.4 }); shape(bf,'a-cone',[0,1.35,0],{ 'radius-bottom':0.3,'radius-top':0,height:0.8 },'#ff8a2a',{ flat:true, op:0.85 });
+  shape(bf,'a-cone',[0,1.3,0],{ 'radius-bottom':0.16,'radius-top':0,height:0.6 },'#ffd27a',{ flat:true, op:0.9 }); bf.setAttribute('animation__f',{ property:'scale', from:'1 0.9 1', to:'1 1.15 1', dir:'alternate', loop:true, dur:300 });
+  [[-1.2,0.5],[1.2,0.3],[0.2,-1.3]].forEach(c=>box(bf,[c[0],0.2,c[1]],[0.6,0.4,0.6],'#6a5a4a'));
+  reg('barrel-fire', bf, 'Barrel fire', 'A scavenger\'s barrel fire, still warm. Whoever lit it moved on.');
 
   /* a rusted frame (Eco Gate if alive=true, otherwise a decoy). kind = box | pipe | lean */
   function frame(id, x, z, ry, kind, alive, name, msg){
     const a = mk(g,'a-entity',{ position:`${x} 0 ${z}`, rotation:`0 ${ry} 0` }), w = 4.4, h = kind==='lean' ? 3.4 : 4.4, c = kind==='pipe' ? '#6f6a5e' : '#6a3b24';
     if (kind==='pipe'){ cyl(a,[-w/2,h/2,0],0.28,h,c,{ m:0.4 }); cyl(a,[w/2,h/2,0],0.28,h,c,{ m:0.4 }); cyl(a,[0,h+0.2,0],0.28,w+0.5,c,{ rot:[0,0,90], m:0.4 }); }
-    else { box(a,[-w/2,h/2,0],[0.6,h,0.6],c,{ m:0.3 }); box(a,[kind==='lean'?w/2-0.6:w/2,h/2,0],[0.6,h,0.6],c,{ m:0.3, rot:kind==='lean'?[0,0,-14]:[0,0,0] }); box(a,[0,h+0.2,0],[w+0.6,0.5,0.6],c,{ m:0.3, rot:kind==='lean'?[0,0,-6]:[0,0,0] }); }
-    if (alive){ cyl(a,[0.3,0.3,0.9],0.03,0.6,'#4f6f2a'); sph(a,[0.3,0.65,0.9],0.12,'#6fa040'); sph(a,[0.46,0.55,0.9],0.08,'#7cb04a'); }
+    else { box(a,[-w/2,h/2,0],[0.6,h,0.6],c,{ m:0.3 }); box(a,[kind==='lean'?w/2-0.6:w/2,h/2,0],[0.6,h,0.6],c,{ m:0.3, rot:kind==='lean'?[0,0,-14]:[0,0,0] }); box(a,[0,h+0.2,0],[w+0.6,0.5,0.6],c,{ m:0.3, rot:kind==='lean'?[0,0,-6]:[0,0,0] }); box(a,[0,h-0.6,0.31],[w-0.8,0.1,0.02],'#8a5a3a'); }
+    [[-w/2-0.5,0.2],[w/2+0.5,0.15],[-w/2+0.2,0.1]].forEach(d=>box(a,[d[0],d[1],0.5],[0.5,0.3,0.4],'#5a4a3a',{ rot:[0,25,0] }));
+    if (alive){ cyl(a,[0.3,0.3,0.9],0.03,0.6,'#4f6f2a'); sph(a,[0.3,0.65,0.9],0.12,'#6fa040'); sph(a,[0.46,0.55,0.9],0.08,'#7cb04a'); sph(a,[0.18,0.5,0.9],0.07,'#8cc05a'); }
     else { cyl(a,[0.3,0.2,0.9],0.03,0.4,'#4a3a2a',{ rot:[0,0,20] }); sph(a,[0.4,0.42,0.9],0.07,'#5a4a30'); }
     if (alive){ const core = mk(a,'a-plane',{ position:`0 ${h/2} 0.05`, width:3.7, height:h-0.2 }); core.setAttribute('material','shader:flat;color:#9cd67a;opacity:0;transparent:true;side:double'); reg(id, a, name, msg); core.classList.add('clickable'); makeGlow(id, core, null); }
     else reg(id, a, name, msg);
   }
   frame('eco-gate',   22, -30, -20, 'box',  true,  'Frame', 'The arch is silent for now. Find the object your riddle describes first.');
-  frame('frame-pipe', -20,-22,  15, 'pipe', false, 'Frame', 'A pipe frame. Dead brown stubble at its feet — nothing grows here.');
-  frame('frame-goal', 30, -8,  -60, 'box',  false, 'Frame', 'A goalpost-like frame. Cracked dirt below, nothing living.');
+  frame('frame-pipe', -20,-22,  15, 'pipe', false, 'Frame', 'A pipe frame. Dead brown stubble at its feet, nothing grows here.');
+  frame('frame-goal', 30, -8,  -60, 'box',  false, 'Frame', 'A goalpost shaped frame. Cracked dirt below, nothing living.');
   frame('frame-lean', -8, -38,  30, 'lean', false, 'Frame', 'A fallen, leaning frame. The ground beneath it is dust.');
   frame('frame-gate2', 8,  10, 100, 'box',  false, 'Frame', 'A frame with nothing growing under it. Dead as the rest.');
 
   /* ---- Badge pocket (west). Entrance faces east. ---- */
-  [[-36,-10.5,4],[-36,-1.5,5],[-41,-6,6],[-32.5,-10.8,3],[-32.5,-1.2,3]].forEach(c=>{ for(let l=0;l<c[2];l++) box(g,[c[0],0.55+l*1.1,c[1]],[2.5,1.05,1.6],cols[(l+Math.floor(-c[0]))%cols.length],{ rot:[0,(l%2?4:-4),0] }); });
-  box(g,[-37.5,0.4,-6],[1.1,0.8,0.8],'#5b4630');
+  [[-36,-10.5,4],[-36,-1.5,5],[-41,-6,6],[-32.5,-10.8,3],[-32.5,-1.2,3]].forEach((c,i)=>{ for(let l=0;l<c[2];l++) tbox(g,[c[0],0.55+l*1.1,c[1]],[2.5,1.05,1.6],trailerTex(i+l),{ rot:[0,(l%2?4:-4),0] }); });
+  box(g,[-37.5,0.4,-6],[1.1,0.8,0.8],'#5b4630'); box(g,[-37.5,0.82,-6],[1.2,0.04,0.9],'#6a5640');
   const bd = mk(g,'a-entity',{ position:'-37.5 0.85 -6', rotation:'-15 20 0' });
   cyl(bd,[0,0.22,0],0.3,0.04,'#a8322e',{ rot:[90,0,0], m:0.4 }); cyl(bd,[0,0.22,0.025],0.22,0.02,'#e8e4da',{ rot:[90,0,0] }); txt(bd,'IOI',[0,0.22,0.045],{ w:0.7, c:'#a8322e' });
   cyl(bd,[0.45,0.04,0.2],0.05,0.45,'#d8cbb0',{ rot:[0,20,90] });
@@ -641,8 +815,7 @@ function buildWaste(){
   reg('scrap-can', can, 'Object', 'A dented canteen. Empty.');
   const flag = mk(g,'a-entity',{ position:'-36.3 0.9 -3' }); cyl(flag,[0,0.8,0],0.02,1.6,'#444'); box(flag,[0.28,1.4,0],[0.55,0.35,0.02],'#9a8a6a');
   reg('scrap-flag', flag, 'Object', 'A torn scrap of cloth tied to a pole. Not what you\'re searching for.');
-  /* a second pocket with different junk */
-  [[26,18,4],[26,24.5,3],[31,21,5]].forEach(c=>{ for(let l=0;l<c[2];l++) box(g,[c[0],0.55+l*1.1,c[1]],[2.5,1.05,1.6],cols[(l+2)%cols.length]); });
+  [[26,18,4],[26,24.5,3],[31,21,5]].forEach(c=>{ for(let l=0;l<c[2];l++) tbox(g,[c[0],0.55+l*1.1,c[1]],[2.5,1.05,1.6],trailerTex(l+1)); });
   const rad = mk(g,'a-entity',{ position:'24 0.5 21.3' }); box(rad,[0,0.2,0],[0.5,0.4,0.2],'#3a3a3a'); cyl(rad,[0.1,0.6,0],0.01,0.5,'#aaa');
   reg('scrap-radio', rad, 'Object', 'A broken radio. A faint hiss, no signal.');
   const doll = mk(g,'a-entity',{ position:'23.4 0.15 22.6' }); sph(doll,[0,0.25,0],0.1,'#d8b89a'); box(doll,[0,0.08,0],[0.16,0.18,0.1],'#8a4a6a');
@@ -654,28 +827,34 @@ function buildWaste(){
   const disc = mk(pw,'a-circle',{ position:'0 2.1 0', radius:1.62 }); disc.setAttribute('material','shader:flat;color:#2a100a;opacity:0.92;transparent:true;side:double');
   const pc = mk(pw,'a-circle',{ position:'0 2.1 0.03', radius:1.62 }); pc.setAttribute('material','shader:flat;color:#ff9a3a;opacity:0;transparent:true;side:double');
   box(pw,[0,0.1,0],[3,0.2,1],'#2a2218');
-  [[-4,3,-2],[4.5,4,1.5],[0,5,-4]].forEach(c=>{ for(let l=0;l<c[1];l++) box(pw,[c[0],0.55+l*1.1,c[2]],[2.4,1.05,1.5],cols[l%cols.length]); });
+  [[-4,3,-2],[4.5,4,1.5],[0,5,-4]].forEach((c,i)=>{ for(let l=0;l<c[1];l++) tbox(pw,[c[0],0.55+l*1.1,c[2]],[2.4,1.05,1.5],trailerTex(i+l)); });
   reg('portal-waste', pw, 'Ring', 'The ring is still. It is not ready for you.'); pc.classList.add('clickable'); makeGlow('portal-waste', pc, null);
-  /* decoy rings: hollow */
   function ring(id,x,z,col,rad,tube,ry,msg){ const p=mk(g,'a-entity',{ position:`${x} 0 ${z}`, rotation:`0 ${ry} 0` }); shape(p,'a-torus',[0,rad+0.1,0],{ radius:rad,'radius-tubular':tube,'segments-tubular':24 },col,{ r:1 }); reg(id,p,'Ring',msg); }
   ring('ring-tire', -12,-32,'#1a1a1a',1.6,0.5,10,'A giant tire standing on its edge. Hollow, showing only the same dead sky.');
   ring('ring-pipe',  34,-38,'#6a6f68',1.9,0.18,-30,'A bent pipe ring, hollow in the middle. Not this one.');
   ring('ring-gear',  12,-18,'#7a5a3a',1.5,0.3,60,'A rusted gear ring, hollow. Nothing fills it.');
 
-  /* smokestacks, trees, heaps */
+  /* smokestacks, trees, heaps, laundry lines */
   [[-60,-60],[56,-62],[-10,-70],[70,-10]].forEach(p=>{ const s=mk(g,'a-entity',{ position:`${p[0]} 0 ${p[1]}` });
     cyl(s,[0,8,0],1.4,16,'#4a4540'); cyl(s,[0,16.1,0],1.5,0.4,'#2a2724'); for(let i=0;i<4;i++) sph(s,[(i-1.5)*0.9,17.5+i*1.6,0],1.3+i*0.35,'#6d6762',{ op:0.45 }); });
-  [[-9,-8],[16,6],[-20,12],[6,-20],[21,-14],[-28,-14],[-44,-24],[40,-22]].forEach(p=>{ const t=mk(g,'a-entity',{ position:`${p[0]} 0 ${p[1]}` });
-    cyl(t,[0,1.6,0],0.16,3.2,'#2c211a'); [[0.6,2.6,25],[-0.6,2.2,-30],[0.1,3.1,10]].forEach(b=>cyl(t,[b[0],b[1],0],0.06,1.6,'#2c211a',{ rot:[0,0,b[2]] })); });
+  [[-9,-8],[16,6],[-20,12],[6,-20],[21,-14],[-28,-14],[-44,-24],[40,-22],[-4,30],[28,34]].forEach(p=>{ const t=mk(g,'a-entity',{ position:`${p[0]} 0 ${p[1]}` });
+    cyl(t,[0,1.6,0],0.16,3.2,'#2c211a'); [[0.6,2.6,25],[-0.6,2.2,-30],[0.1,3.1,10],[-0.3,3.4,-15]].forEach(b=>cyl(t,[b[0],b[1],0],0.06,1.6,'#2c211a',{ rot:[0,0,b[2]] })); });
   for (let i=0;i<22;i++){ const x=(r()*2-1)*56, z=(r()*2-1)*56; if(!free(x,z,6)) continue; const s=1+r()*2.2; shape(g,'a-dodecahedron',[x,s*0.3,z],{ radius:s },'#3d3328',{ scale:[1.3,0.5,1.1] }); }
+  [[-18,0,12],[22,-12,10],[-6,-20,14]].forEach(l=>{ const lg=mk(g,'a-entity',{ position:`${l[0]} 0 ${l[1]}`, rotation:`0 ${l[2]*3} 0` }); cyl(lg,[-3,2.2,0],0.05,4.4,'#444'); cyl(lg,[3,2.2,0],0.05,4.4,'#444'); box(lg,[0,3.9,0],[6,0.02,0.02],'#999');
+    ['#c9524a','#e8e0d0','#4a7fb8','#e1b04a','#e8e0d0'].forEach((c,i)=>box(lg,[-2.4+i*1.2,3.5,0],[0.7,0.8,0.02],c)); });
 
   const bb = mk(g,'a-entity',{ position:'-14 0 12', rotation:'0 40 0' });
-  cyl(bb,[0,2.5,0],0.15,5,'#444'); box(bb,[0,5.4,0],[5,2.4,0.2],'#26242a'); txt(bb,'OASIS\nIT\'S WHERE LIFE HAPPENS',[0,5.4,0.15],{ w:4.6, c:'#d9c9a0' });
-  reg('billboard', bb, 'Billboard', 'A faded OASIS advertisement. Persuasive — but not what you\'re searching for.');
+  cyl(bb,[-1.8,2.5,0],0.15,5,'#444'); cyl(bb,[1.8,2.5,0],0.15,5,'#444'); box(bb,[0,5.4,0],[5,2.4,0.2],'#26242a'); box(bb,[0,5.4,0.11],[4.7,2.1,0.02],'#1a1a22'); txt(bb,'OASIS\nIT\'S WHERE LIFE HAPPENS',[0,5.4,0.15],{ w:4.4, c:'#d9c9a0' });
+  reg('billboard', bb, 'Billboard', 'A faded OASIS advertisement. Persuasive, but not what you\'re searching for.');
   const ba = mk(g,'a-entity',{ position:'-7 0 24' }); [[0,0],[0.9,0.2],[0.4,0.9],[-0.7,0.7]].forEach(p=>cyl(ba,[p[0],0.55,p[1]],0.38,1.1,'#7a3b24',{ m:0.4 }));
   reg('barrels', ba, 'Oil drums', 'Empty, rusted oil drums. Nothing helpful here.');
   const ti = mk(g,'a-entity',{ position:'3 0 28' }); for (let i=0;i<4;i++) shape(ti,'a-torus',[0,0.2+i*0.32,0],{ radius:0.55,'radius-tubular':0.2,'segments-tubular':12 },'#161616',{ rot:[90,0,0] });
-  reg('tires', ti, 'Tires', 'A tower of scrap tires. A pile of old things, stacked up — but not your object.');
+  reg('tires', ti, 'Tires', 'A tower of scrap tires. A pile of old things, stacked up, but not your object.');
+
+  /* drifting ash that follows the player (child of the camera, waste only) */
+  const ash = mk(cam,'a-entity',{ id:'ash', visible:'false' }); const ar = rngMaker(31);
+  for (let i=0;i<36;i++){ const e = mk(ash,'a-box',{ position:`${(ar()-.5)*14} ${ar()*5-1.5} ${-ar()*10}`, width:0.03, height:0.03, depth:0.03 }); e.setAttribute('material','shader:flat;color:#d8c8a8;opacity:0.7;transparent:true');
+    e.setAttribute('animation__fall',{ property:'position', to:`${(ar()-.5)*14} ${-2.2} ${-ar()*10}`, dur:4000+ar()*5000, loop:true, easing:'linear' }); }
 }
 
 /* ---------- ENVIRONMENT 3 : IOI HEADQUARTERS (sterile, corporate, bright) ---------- */
@@ -684,55 +863,85 @@ function buildIOI(){
   mk(g,'a-entity',{ light:'type:ambient;color:#f4f6fa;intensity:1.0' });
   light(g,[0,6,5],'#ffffff',0.45,45); light(g,[0,6,-25],'#ffffff',0.45,45);
 
-  const grid = texture(256,256,(c,w,h)=>{ c.fillStyle='#c8cdd5'; c.fillRect(0,0,w,h); c.strokeStyle='#a4abb7'; c.lineWidth=3; c.strokeRect(0,0,w,h); });
-  const fl = mk(g,'a-plane',{ position:'0 0 -12.5', rotation:'-90 0 0', width:52, height:65 }); fl.setAttribute('material',{ src:grid, repeat:'26 33', roughness:0.5, metalness:0.15 });
-  const ce = mk(g,'a-plane',{ position:'0 7 -12.5', rotation:'90 0 0', width:52, height:65 }); ce.setAttribute('material','color:#dde1e7;roughness:1');
-  [[0,3.5,-45,0,52],[0,3.5,20,180,52],[26,3.5,-12.5,-90,65],[-26,3.5,-12.5,90,65]].forEach(w=>{
-    const wl = mk(g,'a-plane',{ position:`${w[0]} ${w[1]} ${w[2]}`, rotation:`0 ${w[3]} 0`, width:w[4], height:7 }); wl.setAttribute('material','color:#e6e9ee;roughness:0.9'); });
+  tplane(g,[0,0,-12.5],52,65,marbleTex(),{ rot:[-90,0,0], m:{ repeat:'13 16', roughness:0.35, metalness:0.2 } });
+  tplane(g,[0,0.012,-8],12,12,logoTex(),{ rot:[-90,0,0], m:{ transparent:true, roughness:0.4 } });
+  const ceTex = tx('ceil',64,64,(c,w,h)=>{ c.fillStyle='#e6e9ee'; c.fillRect(0,0,w,h); c.strokeStyle='#b8bec8'; c.lineWidth=2; c.strokeRect(0,0,w,h); });
+  tplane(g,[0,7,-12.5],52,65,ceTex,{ rot:[90,0,0], m:{ repeat:'26 32', roughness:1 } });
+  /* solid walls (north, west), glass skyline walls (east, south) */
+  const wallM = 'color:#e6e9ee;roughness:0.9';
+  [[0,3.5,-45,0,52],[-26,3.5,-12.5,90,65]].forEach(w=>{ const wl = mk(g,'a-plane',{ position:`${w[0]} ${w[1]} ${w[2]}`, rotation:`0 ${w[3]} 0`, width:w[4], height:7 }); wl.setAttribute('material',wallM); });
+  tplane(g,[26.2,3.5,-12.5],65,7,skylineTex(),{ rot:[0,-90,0], m:{ shader:'flat', repeat:'2 1' } }); tplane(g,[0,3.5,20.2],52,7,skylineTex(),{ rot:[0,180,0], m:{ shader:'flat', repeat:'2 1' } });
+  for (let z=19;z>=-44;z-=6.5) box(g,[25.8,3.5,z],[0.3,7,0.3],'#8d98ad',{ m:0.6 }); for (let x=-25;x<=25;x+=6.5) box(g,[x,3.5,19.8],[0.3,7,0.3],'#8d98ad',{ m:0.6 });
+  box(g,[25.8,0.15,-12.5],[0.3,0.3,65],'#8d98ad',{ m:0.6 }); box(g,[25.8,6.9,-12.5],[0.3,0.3,65],'#8d98ad',{ m:0.6 });
   [15,5,-5,-15,-25,-35].forEach(z=>box(g,[0,6.95,z],[40,0.05,0.4],'#fff',{ e:'#ffffff', ei:1.0 }));
-  [-14,14].forEach(x=>[10,-2,-14,-26,-38].forEach(z=>box(g,[x,3.5,z],[0.9,7,0.9],'#cfd4db',{ m:0.2 })));
-  txt(g,'INNOVATIVE ONLINE INDUSTRIES',[0,6,-44.9],{ w:22, c:'#a8322e' });
+  [-14,14].forEach(x=>[10,-2,-14,-26,-38].forEach(z=>{ box(g,[x,3.5,z],[0.9,7,0.9],'#cfd4db',{ m:0.2 }); box(g,[x,0.2,z],[1.1,0.4,1.1],'#8d98ad',{ m:0.5 }); }));
+  txt(g,'INNOVATIVE ONLINE INDUSTRIES',[0,6,-44.9],{ w:22, c:'#a8322e' }); tplane(g,[0,3.3,-44.88],4,4,logoTex(),{ m:{ transparent:true, shader:'flat' } });
   txt(g,'YOUR FUTURE IS OUR PROPERTY',[0,0.9,19.9],{ w:10, c:'#8a8f99', rot:[0,180,0] });
+  [-20,-12,-4,4,12,20].forEach(x=>tplane(g,[x,4.6,-4],1.0,2.5,bannerTex(),{ m:{ shader:'flat' } }));   /* hanging banners */
+  for (let i=0;i<6;i++) cyl(g,[-20+i*8,6.3,-4],0.01,1,'#999');
 
-  /* cubicle farm */
-  [3,-3,-9].forEach(z=>[-9,-4.5,0,4.5,9].forEach(x=>{ const cb=mk(g,'a-entity',{ position:`${x} 0 ${z}` });
+  /* security turnstiles near the entrance */
+  [-3,0,3].forEach(x=>{ const t=mk(g,'a-entity',{ position:`${x} 0 15` }); box(t,[-0.45,0.55,0],[0.12,1.1,0.9],'#bfc5d0',{ m:0.4 }); box(t,[0.45,0.55,0],[0.12,1.1,0.9],'#bfc5d0',{ m:0.4 }); box(t,[-0.45,1.12,0],[0.14,0.04,0.2],'#6fbf7a',{ e:'#6fbf7a', ei:1 }); box(t,[0.45,1.12,0],[0.14,0.04,0.2],'#c9524a',{ e:'#c9524a', ei:1 }); });
+
+  /* cubicle farm with chairs, monitors, papers */
+  [3,-3,-9].forEach((z,zi)=>[-9,-4.5,0,4.5,9].forEach((x,xi)=>{ const cb=mk(g,'a-entity',{ position:`${x} 0 ${z}` });
     box(cb,[0,0.74,0],[1.8,0.07,0.8],'#b9a98a'); box(cb,[0,0.7,-0.45],[2.0,1.4,0.05],'#8d98ad'); box(cb,[-1.0,0.7,0],[0.05,1.4,0.9],'#8d98ad'); box(cb,[1.0,0.7,0],[0.05,1.4,0.9],'#8d98ad');
-    box(cb,[0,1.0,-0.2],[0.5,0.35,0.3],'#cfc7b0'); }));
+    box(cb,[0,1.0,-0.2],[0.5,0.35,0.3],'#cfc7b0'); tplane(cb,[0,1.02,-0.04],0.42,0.28,screenTex(xi+zi),{ m:{ shader:'flat' } });
+    cyl(cb,[0.2,0.4,0.7],0.04,0.5,'#222'); box(cb,[0.2,0.62,0.7],[0.45,0.08,0.45],'#2f3a4a'); box(cb,[0.2,0.95,0.92],[0.45,0.5,0.06],'#2f3a4a');
+    box(cb,[-0.55,0.8,0.1],[0.25,0.01,0.3],'#f4f1ec',{ rot:[0,15,0] }); }));
+
+  /* reception + waiting area + water cooler + plants */
   const rc = mk(g,'a-entity',{ position:'0 0 13' });
-  box(rc,[0,0.6,0],[6,1.2,1],'#dfe3ea',{ m:0.2 }); box(rc,[0,1.22,0],[6.2,0.06,1.2],'#8d98ad'); txt(rc,'SIXER CHECK-IN',[0,0.7,0.52],{ w:4, c:'#3a4254' });
+  box(rc,[0,0.6,0],[6,1.2,1],'#dfe3ea',{ m:0.2 }); box(rc,[0,1.22,0],[6.2,0.06,1.2],'#8d98ad'); tplane(rc,[0,0.62,0.52],1.6,1.1,logoTex(),{ m:{ transparent:true, shader:'flat' } });
+  [-1.8,1.8].forEach((x,i)=>{ box(rc,[x,1.6,-0.1],[0.7,0.45,0.05],'#cfc7b0'); tplane(rc,[x,1.62,-0.07],0.62,0.36,screenTex(i+1),{ m:{ shader:'flat' } }); });
   reg('reception', rc, 'Reception desk', 'A sleek reception desk for visiting Sixers. A bored hologram receptionist waves, but it can\'t help your quest.');
+  const sofa = mk(g,'a-entity',{ position:'-18 0 12', rotation:'0 90 0' }); box(sofa,[0,0.3,0],[2.4,0.5,0.9],'#3a4a63'); box(sofa,[0,0.75,-0.4],[2.4,0.6,0.15],'#3a4a63'); box(g,[-16.2,0.25,12],[0.7,0.5,1.4],'#cfd4db',{ m:0.3 });
+  const wc = mk(g,'a-entity',{ position:'-18 0 17' }); box(wc,[0,0.5,0],[0.4,1.0,0.4],'#e8edf2'); cyl(wc,[0,1.25,0],0.18,0.5,'#9fd0f0',{ op:0.6 });
+  [[-22,16],[22,16],[-22,-40],[22,-40],[-14,-34],[14,-34],[-3,-30],[3,-30]].forEach(p=>pot(g,p[0],p[1],1.4));
   const sr = mk(g,'a-entity',{ position:'-8 0 -41' });
-  [0,1.1,2.2].forEach(x=>{ box(sr,[x,1.4,0],[0.9,2.8,0.9],'#26282e'); for(let i=0;i<8;i++) box(sr,[x,0.4+i*0.32,0.46],[0.7,0.05,0.02],'#fff',{ e:i%3?'#6fbf7a':'#c9524a', ei:1.1 }); });
+  [0,1.1,2.2].forEach(x=>{ box(sr,[x,1.4,0],[0.9,2.8,0.9],'#26282e'); for(let i=0;i<8;i++) box(sr,[x,0.4+i*0.32,0.46],[0.7,0.05,0.02],'#fff',{ e:i%3?'#6fbf7a':'#c9524a', ei:1.1 }); }); box(sr,[1.1,3.0,0],[3.4,0.1,0.4],'#555');
   reg('servers', sr, 'Server racks', 'Humming server racks full of data about thousands of indentured gunters. Not your object.');
-  const lw = mk(g,'a-entity',{ position:'25.9 3.2 -2', rotation:'0 -90 0' });
+  const lw = mk(g,'a-entity',{ position:'25.7 3.2 -2', rotation:'0 -90 0' });
   box(lw,[0,0,0],[5,2.2,0.1],'#2b3040'); txt(lw,'LOYALTY CENTER\nAGENTS WANTED',[0,0,0.07],{ w:4.2, c:'#e6d6d2' });
-  reg('logo-wall', lw, 'Recruitment board', 'A cheerful recruitment board. The small print is... less cheerful. Still not your object.');
+  reg('logo-wall', lw, 'Recruitment board', 'A cheerful recruitment board. The small print is less cheerful. Still not your object.');
+
+  /* holographic globe on a dais (north center) */
+  const gl = mk(g,'a-entity',{ position:'0 0 -30' }); cyl(gl,[0,0.2,0],2.4,0.4,'#dfe3ea',{ m:0.3 }); cyl(gl,[0,0.45,0],1.8,0.1,'#a8322e');
+  const globe = shape(gl,'a-sphere',[0,2.6,0],{ radius:1.5,'segments-width':18,'segments-height':12 },'#6aa8d8',{ flat:true, op:0.45 }); globe.setAttribute('material','shader:flat;color:#6aa8d8;wireframe:true;opacity:0.9;transparent:true'); spin(globe, 16000);
+  const core = sph(gl,[0,2.6,0],0.8,'#3a78b8',{ flat:true, op:0.5 }); spin(core, 9000,'360 360 0');
+  shape(gl,'a-torus',[0,2.6,0],{ radius:2.0,'radius-tubular':0.03,'segments-tubular':40 },'#e8edf2',{ flat:true, rot:[70,0,0] });
 
   /* five round vault doors on the north wall; one is the Marxist Gate */
+  const caution = tx('caution',64,64,(c,w,h)=>{ c.fillStyle='#e1b04a'; c.fillRect(0,0,w,h); c.fillStyle='#222'; for(let k=-h;k<w;k+=24){ c.beginPath(); c.moveTo(k,h); c.lineTo(k+12,h); c.lineTo(k+h+12,0); c.lineTo(k+h,0); c.fill(); } });
   function vault(id, x, label, isGate, msg){
     const v = mk(g,'a-entity',{ position:`${x} 0 -44.5` });
+    tplane(v,[0,0.02,3],4.2,2.6,caution,{ rot:[-90,0,0], m:{ repeat:'4 2' } });
+    box(v,[0,2.4,-0.1],[4.4,4.4,0.2],'#aab2c0',{ m:0.4 });
     cyl(v,[0,2.4,0],1.8,0.5,'#9aa3b5',{ rot:[90,0,0], m:0.85, r:0.35 }); cyl(v,[0,2.4,0.3],1.25,0.2,'#6f788c',{ rot:[90,0,0], m:0.8 });
     [0,60,120].forEach(a=>box(v,[0,2.4,0.45],[2.6,0.14,0.1],'#cfd6e6',{ rot:[0,0,a], m:0.8 })); cyl(v,[0,2.4,0.5],0.3,0.2,'#b8923a',{ rot:[90,0,0], m:0.8 });
-    txt(v,label,[0,4.7,0.3],{ w:3.2, c:'#3a4254' });
+    for (let i=0;i<12;i++){ const a=i/12*Math.PI*2; sph(v,[Math.cos(a)*1.65,2.4+Math.sin(a)*1.65,0.28],0.07,'#444'); }
+    box(v,[0,4.9,0.05],[3.4,0.5,0.06],'#2b3040'); txt(v,label,[0,4.9,0.1],{ w:3.2, c:'#f4f1ec' });
     reg(id, v, 'Vault door', msg);
     if (isGate){ const mc = mk(v,'a-circle',{ position:'0 2.4 0.58', radius:1.75 }); mc.setAttribute('material','shader:flat;color:#c9524a;opacity:0;transparent:true;side:double'); mc.classList.add('clickable'); makeGlow(id, mc, null); }
   }
   vault('vault-air', -20, 'AIR HANDLING', false, 'A hatch marked AIR HANDLING. Whirring fans behind it. Not the gate.');
   vault('vault-arch', -9, 'ARCHIVES', false, 'A hatch marked ARCHIVES. Sealed with an IOI padlock. Not the gate.');
-  vault('vault-pay', 2, 'PAYROLL', false, 'A hatch marked PAYROLL. The paychecks are... conditional. Not the gate.');
+  vault('vault-pay', 2, 'PAYROLL', false, 'A hatch marked PAYROLL. The paychecks are conditional. Not the gate.');
   vault('marx-gate', 14, 'ASSET RECLAMATION', true, 'The vault stays sealed. Follow your riddle first.');
   vault('vault-maint', 22, 'MAINTENANCE', false, 'A hatch marked MAINTENANCE. Mops, mostly. Not the gate.');
 
   /* museum of acquired culture (west) */
-  txt(g,'MUSEUM OF ACQUIRED CULTURE',[-25.9,4.6,-23],{ w:9, c:'#a8322e', rot:[0,90,0] });
+  box(g,[-25.8,4.6,-23],[0.1,1.1,10],'#2b3040'); txt(g,'MUSEUM OF ACQUIRED CULTURE',[-25.72,4.6,-23],{ w:9, c:'#f4f1ec', rot:[0,90,0] });
+  tplane(g,[-21.5,0.02,-23],4,20,tx('runner',64,64,(c,w,h)=>{ c.fillStyle='#7a2f2f'; c.fillRect(0,0,w,h); c.strokeStyle='#d9bf86'; c.lineWidth=4; c.strokeRect(4,4,w-8,h-8); }),{ rot:[-90,0,0], m:{ repeat:'1 8', roughness:1 } });
+  [-14,-18.5,-23,-27.5,-32].forEach(z=>{ const sp=mk(g,'a-entity',{ position:`-23.6 6.6 ${z}` }); cyl(sp,[0,0,0],0.02,0.7,'#333'); shape(sp,'a-cone',[0.3,-0.45,0],{ 'radius-bottom':0.2,'radius-top':0.08,height:0.3 },'#222',{ rot:[0,0,35] }); });
   function museum(id, z, plaque, fill, msg){
     const c = mk(g,'a-entity',{ position:`-23 0 ${z}`, rotation:'0 90 0' });
     box(c,[0,0.5,0],[1.2,1,1.2],'#8c8f96',{ m:0.2 }); box(c,[0,1.03,0],[1.3,0.06,1.3],'#555a66'); box(c,[0,1.4,0],[1.15,0.75,1.15],'#bfe3ff',{ op:0.18, r:0.1 });
     box(c,[0,0.35,0.61],[0.7,0.14,0.02],'#d8d0b0'); txt(c,plaque,[0,0.35,0.63],{ w:0.62, c:'#2a2a2a' });
     fill(c); reg(id, c, 'Display case', msg); return c; }
-  museum('case-shoes', -14, 'SNEAKERS, 1985', c=>{ box(c,[-0.2,1.1,0],[0.4,0.18,0.2],'#c9c4b8'); box(c,[0.25,1.1,0],[0.4,0.18,0.2],'#c9c4b8'); }, 'A pair of vintage sneakers. Acquired, catalogued, priced. Not what you want.');
-  museum('case-trophy', -18.5, 'TROPHY, ARCADE', c=>{ cyl(c,[0,1.2,0],0.15,0.4,'#c9a24a',{ m:0.9 }); cyl(c,[0,1.02,0],0.22,0.06,'#6a5a3a'); }, 'An arcade high-score trophy. Impressive, but not your relic.');
-  museum('case-dice', -23, 'DICE, TWENTY-SIDED', c=>{ [[-.2,0],[.1,.15],[.25,-.15]].forEach((p,i)=>shape(c,'a-icosahedron',[p[0],1.15,p[1]],{ radius:0.1 },['#b5452f','#2f5f86','#3f6d4e'][i])); }, 'A set of twenty-sided dice. Not tapes, not a book.');
+  museum('case-shoes', -14, 'SNEAKERS, 1985', c=>{ box(c,[-0.2,1.1,0],[0.4,0.18,0.2],'#c9c4b8'); box(c,[0.25,1.1,0],[0.4,0.18,0.2],'#c9c4b8'); box(c,[-0.2,1.2,-0.05],[0.2,0.1,0.15],'#c9524a'); }, 'A pair of vintage sneakers. Acquired, catalogued, priced. Not what you want.');
+  museum('case-trophy', -18.5, 'TROPHY, ARCADE', c=>{ cyl(c,[0,1.2,0],0.15,0.4,'#c9a24a',{ m:0.9 }); cyl(c,[0,1.02,0],0.22,0.06,'#6a5a3a'); }, 'An arcade high score trophy. Impressive, but not your relic.');
+  museum('case-dice', -23, 'DICE, TWENTY SIDED', c=>{ [[-.2,0],[.1,.15],[.25,-.15]].forEach((p,i)=>shape(c,'a-icosahedron',[p[0],1.15,p[1]],{ radius:0.1 },['#b5452f','#2f5f86','#3f6d4e'][i])); }, 'A set of twenty sided dice. Not tapes, not a book.');
   museum('journal', -27.5, 'PERSONAL EFFECTS', c=>{
     box(c,[-0.16,1.08,0],[0.3,0.03,0.42],'#e8dcb0',{ rot:[0,0,6] }); box(c,[0.16,1.08,0],[0.3,0.03,0.42],'#e8dcb0',{ rot:[0,0,-6] }); box(c,[0,1.06,0],[0.64,0.02,0.46],'#6a2f2a');
     [['#c9524a',-0.2],['#4a7fb8',0.05],['#d4b04a',0.3]].forEach((t,i)=>box(c,[0.4,1.1+i*0.045,t[1]*0.6],[0.22,0.04,0.14],t[0],{ rot:[0,i*12,0] })); }, 'Not yet.');
@@ -741,7 +950,7 @@ function buildIOI(){
   /* row of data crystals (east). One is clear, with no IOI tag: the Crystal Gate. */
   function crystal(id, z, isGate, msg){
     const c = mk(g,'a-entity',{ position:`19 0 ${z}` });
-    cyl(c,[0,0.45,0],0.5,0.9,'#8c8f96',{ m:0.2 });
+    cyl(c,[0,0.45,0],0.5,0.9,'#8c8f96',{ m:0.2 }); cyl(c,[0,0.02,0],1.0,0.04,'#dfe3ea',{ m:0.4 });
     const cr = shape(c,'a-octahedron',[0,1.9,0],{ radius:0.5 },isGate?'#eef8ff':'#7f8b9c',{ scale:[0.8,2.1,0.8], op:isGate?0.55:0.85, m:0.4, r:0.15, e:isGate?'#cfeaff':undefined, ei:0.1 });
     if (!isGate){ box(c,[0,1.0,0.52],[0.3,0.16,0.02],'#a8322e'); txt(c,'IOI',[0,1.0,0.54],{ w:0.4, c:'#fff' }); }
     reg(id, c, 'Crystal', msg);
@@ -829,7 +1038,7 @@ function hoverTick(){
     }
   }
   S.hover = found; pr.classList.toggle('on', !!found); ch.classList.toggle('on', !!found);
-  if (found) pr.textContent = 'Examine  —  click / [E]';
+  if (found) pr.textContent = 'Examine · click / [E]';
   $('lockhint').classList.toggle('hidden', !(S.started && !S.modal && !S.busy && !isLocked() && !S.won));
 }
 
@@ -849,6 +1058,7 @@ function interact(){
 /* ---------- environment switching ---------- */
 function setEnv(key){
   Object.keys(GROUPS).forEach(k => GROUPS[k].setAttribute('visible', k === key));
+  const ashEl = document.getElementById('ash'); if (ashEl) ashEl.setAttribute('visible', key === 'waste');
   const e = ENVS[key]; S.env = key; window.RPZ_BOUNDS = e.bounds;
   cam.object3D.position.set(e.cx + e.spawn[0], 1.6, e.spawn[1]);
   try { const lc = cam.components['look-controls']; lc.yawObject.rotation.y = 0; lc.pitchObject.rotation.x = 0; } catch(e2){}
@@ -896,11 +1106,11 @@ function renderQ(){
     const claim = Q.claims[m.claim], rival = Q.claims.filter((c,i)=>i!==m.claim);
     h += `<div class="okbox"><b style="color:var(--green)">✔ Evidence accepted.</b> You defended <b>Claim ${'ABC'[m.claim]}</b>: ${esc(claim.text)}
         ${claim.ev.map(i=>`<q>“${esc(Q.evidence[i])}”</q>`).join('')}</div>
-      <h3><span class="n">3</span>Defend it — the Writer's Move</h3>
+      <h3><span class="n">3</span>Defend it: the Writer's Move</h3>
       <div class="frame">The author does not simply use <i>[technique]</i> to <i>[effect]</i>; instead, the author uses <i>[technique]</i> to reveal <i>[meaning]</i>, suggesting that <i>[insight about humanity]</i>.</div>
       <textarea id="tDefend" placeholder="Write your own version of the sentence above, using the specific language from your evidence…">${esc(m.defend||'')}</textarea>
       <div class="cnt" id="cDefend"></div>
-      <h3><span class="n">4</span>Reconsider — a competing interpretation</h3>
+      <h3><span class="n">4</span>Reconsider: a competing interpretation</h3>
       <p class="qtext" style="font-size:15px;margin:0 0 4px">A classmate argues: <i>“${esc(rival[0].text)}”</i><br>How does this competing reading <b>complicate, challenge, or deepen</b> your claim? Where might you be partly wrong?</p>
       <textarea id="tRecon" placeholder="Acknowledge a contradiction, ambiguity, or limit in your own argument…">${esc(m.recon||'')}</textarea>
       <div class="cnt" id="cRecon"></div>
@@ -933,7 +1143,7 @@ function submitEvidence(){
   if (good === mine) { sfx.ok(); m.phase = 'defend'; renderQ(); $('qpanel').scrollTop = 0; }
   else {
     m.tries++; S.wrong++; sfx.bad();
-    m.msg = '✖ Not quite. Re-evaluate: which details actually <b>prove</b> your claim — not just mention the topic? You may change your evidence or switch to a different claim.' +
+    m.msg = '✖ Not quite. Re-evaluate: which details actually <b>prove</b> your claim, not just mention the topic? You may change your evidence or switch to a different claim.' +
       (m.tries >= 3 ? '<br><i>Hint: look for language that shows the author\'s <u>technique</u> at work (word choice, symbol, contrast), not just plot events.</i>' : '');
     m.msgClass = 'bad'; renderQ(); const q = $('qmsg'); q.classList.add('shake'); setTimeout(()=>q && q.classList.remove('shake'), 450);
   }
@@ -955,7 +1165,7 @@ function finishQuestion(){
    10.  VICTORY
    ===================================================================== */
 function journalText(){
-  let t = `READY PLAYER ZERO — Analysis Journal\nPlayer: ${S.name}\nScore: ${currentScore()}\n\n`;
+  let t = `READY PLAYER ZERO: Analysis Journal\nPlayer: ${S.name}\nScore: ${currentScore()}\n\n`;
   S.journal.forEach((j,i)=>{ t += `${i+1}. ${j.title} (${j.label})\nQuestion: ${j.question}\nClaim: ${j.claim}\nEvidence:\n${j.evidence.map(e=>'  - '+e).join('\n')}\nMy defense (Writer's Move): ${j.defend}\nReconsideration: ${j.recon}\n\n`; });
   return t;
 }
@@ -964,7 +1174,7 @@ function victory(){
   const score = currentScore(), lb = store('rpz_lb') || []; lb.unshift({ n:S.name, s:score }); store('rpz_lb', lb.slice(0, 20));
   drawLeaderboard();
   $('vsub').textContent = `${S.name} · Final score ${score} · ${S.wrong} evidence re-evaluation${S.wrong===1?'':'s'} · ${S.hints} hint${S.hints===1?'':'s'}`;
-  $('vtake').textContent = TAKEAWAY; $('vboard').innerHTML = boardHTML();
+  $('vtake').innerHTML = '<div class="qt">“' + esc(TAKEAWAY) + '”</div><div class="qby">' + esc(TAKEAWAY_BY) + '</div>'; $('vboard').innerHTML = boardHTML();
   $('vjournal').innerHTML = S.journal.map(j=>`<details class="jr"><summary>${esc(j.title)}</summary>
       <p><b>Claim:</b> ${esc(j.claim)}</p><p><b>Evidence:</b> ${j.evidence.map(esc).join(' &nbsp;|&nbsp; ')}</p>
       <p><b>Defense:</b> ${esc(j.defend)}</p><p><b>Reconsideration:</b> ${esc(j.recon)}</p></details>`).join('');
@@ -989,7 +1199,7 @@ function startGame(){
 window.addEventListener('keydown', e => {
   const tag = (e.target && e.target.tagName) || ''; if (tag === 'TEXTAREA' || tag === 'INPUT') { if (e.key === 'Enter' && tag === 'INPUT' && !$('start').classList.contains('hidden') && !$('startBtn').disabled) startGame(); return; }
   if (e.code === 'KeyE') interact();
-  else if (e.code === 'KeyH' && S.started && !S.modal && !S.won) { S.hints++; toast('💡 Hint (−100 pts): ' + STAGES[S.stage].hint, 6500); }
+  else if (e.code === 'KeyH' && S.started && !S.modal && !S.won) { S.hints++; toast('💡 Hint (costs 100 pts): ' + STAGES[S.stage].hint, 6500); }
   else if (e.code === 'Escape' && S.modal && S.modal.phase === 'pick') closeModal(false);
 });
 window.addEventListener('mousedown', e => { if (e.button === 0 && e.target && e.target.tagName === 'CANVAS') interact(); });
